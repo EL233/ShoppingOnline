@@ -1,0 +1,373 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="navbar">
+        <div id="language-switcher">
+            <select id="lang-select">
+                <option value="zh" selected>中文</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <nav id="nav-links">
+            <a href="index.html">返回首页</a>
+            <a href="shopping-cart.html" data-translate="shopping-cart">购物车</a>
+            <a href="#" onclick="showModal('contact-us')" data-translate="contact-us">联系我们</a>
+            <a href="search.html" data-translate="search">搜索</a>
+        </nav>
+        <div id="homeIcon">
+            <a href="index.html">
+                <img src="images/123.JPG" alt="logo"/>
+            </a>
+        </div>
+    </header>
+
+    <main class="page active" style="margin-top: 120px;">
+        <div id="login-form" class="form-container">
+            <h2>登录</h2>
+            <input type="text" placeholder="邮箱或手机号码" id="login-email">
+            <input type="password" placeholder="密码" id="login-password">
+            <div class="forgot-password">
+                <a href="reset-password.html">忘记密码？</a>
+            </div>
+            <button onclick="loginUser()">开始购物</button>
+            <button onclick="fillTestUser()" style="background-color: #28a745;">使用测试账号</button>
+            <div class="register-prompt">
+                还不是会员？<a href="register.html">注册会员</a>
+            </div>
+            <div id="login-error" style="color: red; margin-top: 10px;"></div>
+        </div>
+
+        <div id="user-profile" class="user-profile" style="display: none;">
+            <h2>欢迎，<span id="username">用户</span></h2>
+            <ul class="profile-menu">
+                <li onclick="showAddresses()">我的地址</li>
+                <li onclick="alert('我的订单功能')">我的订单</li>
+                <li onclick="logoutUser()">退出登录</li>
+            </ul>
+        </div>
+        
+        <!-- 地址管理 -->
+        <div id="address-management" style="display: none;">
+            <h2>我的地址</h2>
+            <div id="address-list"></div>
+            <button onclick="showAddAddressForm()" style="margin-top: 20px;">添加新地址</button>
+            <button onclick="hideAddresses()" style="margin-top: 20px; background-color: #6c757d;">返回</button>
+            <div id="address-error" style="color: red; margin-top: 10px;"></div>
+        </div>
+        
+        <!-- 添加地址表单 -->
+        <div id="add-address-form" class="form-container" style="display: none;">
+            <h2>添加地址</h2>
+            <input type="text" placeholder="收件人姓名" id="address-name">
+            <input type="text" placeholder="联系电话" id="address-phone">
+            <input type="text" placeholder="省份" id="address-province">
+            <input type="text" placeholder="城市" id="address-city">
+            <input type="text" placeholder="区/县" id="address-district">
+            <input type="text" placeholder="详细地址" id="address-detail">
+            <div style="display: flex; align-items: center; margin: 10px 0;">
+                <input type="checkbox" id="address-default" style="width: auto; margin-right: 10px;">
+                <label for="address-default">设为默认地址</label>
+            </div>
+            <button onclick="saveAddress()">保存地址</button>
+            <button onclick="hideAddAddressForm()" style="background-color: #6c757d;">取消</button>
+            <div id="add-address-error" style="color: red; margin-top: 10px;"></div>
+        </div>
+    </main>
+
+    <!-- 联系我们弹出框 -->
+    <div id="contact-us" class="modal">
+        <div class="modal-content">
+            <h3>谢谢您的联络，请留下要咨询的问题</h3>
+            <input type="text" placeholder="输入你的电子邮箱" id="contact-email">
+            <textarea placeholder="输入你想告诉我们的..."></textarea>
+            <button onclick="sendContact()">发送</button>
+            <button onclick="closeModal('contact-us')" style="background: #6c757d;">关闭</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { 
+            setupLanguageSwitcher,
+            showModal,
+            closeModal,
+            sendContact,
+            setupModalClose,
+            initCart
+        } from './core.js';
+        
+        import { userApi, addressApi } from './api.js';
+    
+        // 检查登录状态
+        async function checkLoginStatus() {
+            console.log('检查登录状态...');
+            const token = localStorage.getItem('token');
+            
+            if (token) {
+                try {
+                    console.log('发现token，尝试获取用户信息...');
+                    // 获取用户信息
+                    const response = await userApi.getCurrentUser();
+                    if (response.success) {
+                        console.log('获取用户信息成功:', response.user);
+                        document.getElementById('username').textContent = response.user.email;
+                        document.getElementById('login-form').style.display = 'none';
+                        document.getElementById('user-profile').style.display = 'block';
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('获取用户信息失败:', error);
+                    document.getElementById('login-error').textContent = `获取用户信息失败: ${error.message || '未知错误'}`;
+                    localStorage.removeItem('token');
+                }
+            } else {
+                console.log('未找到token');
+            }
+            
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('user-profile').style.display = 'none';
+            return false;
+        }
+        
+        // 用户登录
+        async function loginUser() {
+            console.log('尝试登录...');
+            document.getElementById('login-error').textContent = '';
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                document.getElementById('login-error').textContent = '请输入邮箱和密码';
+                return;
+            }
+            
+            try {
+                console.log('发送登录请求...');
+                document.getElementById('login-error').textContent = '正在登录，请稍候...';
+                
+                // 尝试使用测试用户
+                if (email === 'test@example.com' && password === '123456') {
+                    console.log('使用测试用户登录');
+                }
+                
+                const response = await userApi.login(email, password);
+                console.log('登录响应:', response);
+                
+                if (response.success) {
+                    console.log('登录成功:', response);
+                    localStorage.setItem('token', response.token);
+                    document.getElementById('username').textContent = response.user.email;
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('user-profile').style.display = 'block';
+                    alert('登录成功！');
+                }
+            } catch (error) {
+                console.error('登录失败:', error);
+                document.getElementById('login-error').textContent = error.message || '登录失败，请检查邮箱和密码';
+            }
+        }
+        
+        // 用户退出登录
+        function logoutUser() {
+            console.log('退出登录');
+            localStorage.removeItem('token');
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('user-profile').style.display = 'none';
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
+        }
+        
+        // 填充测试用户
+        function fillTestUser() {
+            document.getElementById('login-email').value = 'test@example.com';
+            document.getElementById('login-password').value = '123456';
+            document.getElementById('login-error').textContent = '已填充测试账号，点击"开始购物"按钮登录';
+        }
+        
+        // 显示地址列表
+        async function showAddresses() {
+            console.log('加载地址列表...');
+            document.getElementById('address-error').textContent = '';
+            
+            try {
+                const response = await addressApi.getAddresses();
+                if (response.success) {
+                    console.log('获取地址成功:', response.data);
+                    const addressList = document.getElementById('address-list');
+                    addressList.innerHTML = '';
+                    
+                    if (response.data.length === 0) {
+                        addressList.innerHTML = '<p>您还没有添加地址</p>';
+                    } else {
+                        response.data.forEach(address => {
+                            const addressItem = document.createElement('div');
+                            addressItem.className = 'address-item';
+                            addressItem.innerHTML = `
+                                <div class="address-info">
+                                    <p><strong>${address.name}</strong> ${address.phone}</p>
+                                    <p>${address.province} ${address.city} ${address.district}</p>
+                                    <p>${address.detailAddress}</p>
+                                    ${address.isDefault ? '<span class="default-badge">默认</span>' : ''}
+                                </div>
+                                <div class="address-actions">
+                                    <button onclick="editAddress('${address._id}')">编辑</button>
+                                    <button onclick="deleteAddress('${address._id}')" style="background-color: #dc3545;">删除</button>
+                                    ${!address.isDefault ? `<button onclick="setDefaultAddress('${address._id}')" style="background-color: #28a745;">设为默认</button>` : ''}
+                                </div>
+                            `;
+                            addressList.appendChild(addressItem);
+                        });
+                    }
+                    
+                    document.getElementById('user-profile').style.display = 'none';
+                    document.getElementById('address-management').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('获取地址失败:', error);
+                document.getElementById('address-error').textContent = error.message || '获取地址失败';
+            }
+        }
+        
+        // 隐藏地址列表
+        function hideAddresses() {
+            document.getElementById('address-management').style.display = 'none';
+            document.getElementById('user-profile').style.display = 'block';
+        }
+        
+        // 显示添加地址表单
+        function showAddAddressForm() {
+            document.getElementById('address-management').style.display = 'none';
+            document.getElementById('add-address-form').style.display = 'block';
+            document.getElementById('add-address-error').textContent = '';
+        }
+        
+        // 隐藏添加地址表单
+        function hideAddAddressForm() {
+            document.getElementById('add-address-form').style.display = 'none';
+            document.getElementById('address-management').style.display = 'block';
+            
+            // 清空表单
+            document.getElementById('address-name').value = '';
+            document.getElementById('address-phone').value = '';
+            document.getElementById('address-province').value = '';
+            document.getElementById('address-city').value = '';
+            document.getElementById('address-district').value = '';
+            document.getElementById('address-detail').value = '';
+            document.getElementById('address-default').checked = false;
+            document.getElementById('add-address-error').textContent = '';
+        }
+        
+        // 保存地址
+        async function saveAddress() {
+            console.log('保存地址...');
+            document.getElementById('add-address-error').textContent = '';
+            
+            const name = document.getElementById('address-name').value;
+            const phone = document.getElementById('address-phone').value;
+            const province = document.getElementById('address-province').value;
+            const city = document.getElementById('address-city').value;
+            const district = document.getElementById('address-district').value;
+            const detailAddress = document.getElementById('address-detail').value;
+            const isDefault = document.getElementById('address-default').checked;
+            
+            if (!name || !phone || !province || !city || !district || !detailAddress) {
+                document.getElementById('add-address-error').textContent = '请填写完整的地址信息';
+                return;
+            }
+            
+            try {
+                console.log('发送添加地址请求...');
+                const response = await addressApi.addAddress({
+                    name,
+                    phone,
+                    province,
+                    city,
+                    district,
+                    detailAddress,
+                    isDefault
+                });
+                
+                if (response.success) {
+                    console.log('地址添加成功:', response);
+                    alert('地址添加成功');
+                    hideAddAddressForm();
+                    showAddresses();
+                }
+            } catch (error) {
+                console.error('添加地址失败:', error);
+                document.getElementById('add-address-error').textContent = error.message || '添加地址失败';
+            }
+        }
+        
+        // 编辑地址
+        async function editAddress(id) {
+            alert('编辑地址功能即将上线');
+        }
+        
+        // 删除地址
+        async function deleteAddress(id) {
+            if (confirm('确定要删除这个地址吗？')) {
+                try {
+                    console.log('删除地址:', id);
+                    const response = await addressApi.deleteAddress(id);
+                    if (response.success) {
+                        console.log('地址删除成功');
+                        alert('地址删除成功');
+                        showAddresses();
+                    }
+                } catch (error) {
+                    console.error('删除地址失败:', error);
+                    document.getElementById('address-error').textContent = error.message || '删除地址失败';
+                }
+            }
+        }
+        
+        // 设置默认地址
+        async function setDefaultAddress(id) {
+            try {
+                console.log('设置默认地址:', id);
+                const response = await addressApi.setDefaultAddress(id);
+                if (response.success) {
+                    console.log('已设置为默认地址');
+                    alert('已设置为默认地址');
+                    showAddresses();
+                }
+            } catch (error) {
+                console.error('设置默认地址失败:', error);
+                document.getElementById('address-error').textContent = error.message || '设置默认地址失败';
+            }
+        }
+        
+        // 页面加载后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('个人中心页面初始化...');
+            setupLanguageSwitcher();
+            setupModalClose();
+            initCart(); // 初始化购物车数据
+            checkLoginStatus(); // 检查登录状态
+            
+            // 全局函数
+            window.loginUser = loginUser;
+            window.logoutUser = logoutUser;
+            window.showAddresses = showAddresses;
+            window.hideAddresses = hideAddresses;
+            window.showAddAddressForm = showAddAddressForm;
+            window.hideAddAddressForm = hideAddAddressForm;
+            window.saveAddress = saveAddress;
+            window.editAddress = editAddress;
+            window.deleteAddress = deleteAddress;
+            window.setDefaultAddress = setDefaultAddress;
+            window.showModal = showModal;
+            window.closeModal = closeModal;
+            window.sendContact = sendContact;
+            window.fillTestUser = fillTestUser;
+        });
+    </script>
+</body>
+</html>

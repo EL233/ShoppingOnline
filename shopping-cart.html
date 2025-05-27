@@ -1,0 +1,253 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购物车</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="navbar">
+        <div id="language-switcher">
+            <select id="lang-select">
+                <option value="zh" selected>中文</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <nav id="nav-links">
+            <a href="index.html">返回首页</a>
+            <a href="personal-center.html" data-translate="personal-center">个人中心</a>
+            <a href="#" onclick="showModal('contact-us')" data-translate="contact-us">联系我们</a>
+            <a href="search.html" data-translate="search">搜索</a>
+        </nav>
+        <div id="homeIcon">
+            <a href="index.html">
+                <img src="images/123.JPG" alt="logo"/>
+            </a>
+        </div>
+    </header>
+
+    <main class="page active" style="margin-top: 120px;">
+        <h2>购物车</h2>
+        <div id="cart-items">
+            <!-- 购物车内容将由JavaScript动态加载 -->
+        </div>
+        <div id="checkout-section" style="text-align: right; margin-top: 20px; display: none;">
+            <button onclick="checkout()" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">
+                去结算
+            </button>
+            <button onclick="clearCart()" style="padding: 10px 20px; background-color: #dc3545; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-right: 10px;">
+                清空购物车
+            </button>
+        </div>
+    </main>
+
+    <!-- 联系我们弹出框 -->
+    <div id="contact-us" class="modal">
+        <div class="modal-content">
+            <h3>谢谢您的联络，请留下要咨询的问题</h3>
+            <input type="text" placeholder="输入你的电子邮箱" id="contact-email">
+            <textarea placeholder="输入你想告诉我们的，也欢迎留下其他联络方式，谢谢！"></textarea>
+            <button onclick="sendContact()">发送</button>
+            <button onclick="closeModal('contact-us')" style="background: #6c757d;">关闭</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { 
+            setupLanguageSwitcher,
+            showModal,
+            closeModal,
+            sendContact,
+            setupModalClose,
+            initCart
+        } from './core.js';
+        
+        import { cartApi, getToken } from './api.js';
+    
+        // 获取购物车数据
+        async function loadCartItems() {
+            const token = getToken();
+            
+            // 如果用户已登录，从服务器获取购物车
+            if (token) {
+                try {
+                    const response = await cartApi.getCart();
+                    if (response.success) {
+                        displayCartItems(response.data.items);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('获取购物车失败:', error);
+                }
+            }
+            
+            // 如果未登录或获取失败，从localStorage获取
+            const cartItems = JSON.parse(localStorage.getItem('shoppingCart') || '[]');
+            displayCartItems(cartItems);
+        }
+        
+        // 显示购物车商品
+        function displayCartItems(items) {
+            const cartItemsContainer = document.getElementById('cart-items');
+            
+            if (items.length === 0) {
+                cartItemsContainer.innerHTML = `
+                    <div class="empty-cart">
+                        <p>购物车是空的</p>
+                        <p>快去挑选您喜欢的商品吧！</p>
+                        <a href="index.html" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">去购物</a>
+                    </div>
+                `;
+                document.getElementById('checkout-section').style.display = 'none';
+                return;
+            }
+
+            let totalPrice = 0;
+            cartItemsContainer.innerHTML = '';
+
+            items.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                totalPrice += itemTotal;
+
+                const cartItem = document.createElement('div');
+                cartItem.className = 'cart-item';
+                cartItem.innerHTML = `
+                    <img src="${item.image}" alt="${item.title}">
+                    <div class="cart-item-info">
+                        <h4>${item.title}</h4>
+                        <p>单价: ¥${item.price}</p>
+                        <div class="quantity-control">
+                            <span>数量:</span>
+                            <button onclick="updateQuantity(${index}, ${item.quantity - 1})" ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
+                            <span>${item.quantity}</span>
+                            <button onclick="updateQuantity(${index}, ${item.quantity + 1})">+</button>
+                        </div>
+                        <p>小计: ¥${itemTotal.toFixed(2)}</p>
+                        <button onclick="removeItem(${index})" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">删除</button>
+                    </div>
+                `;
+                cartItemsContainer.appendChild(cartItem);
+            });
+
+            // 添加总计
+            const totalDiv = document.createElement('div');
+            totalDiv.style.cssText = 'text-align: right; margin-top: 20px; font-size: 18px; font-weight: bold;';
+            totalDiv.innerHTML = `总计: ¥${totalPrice.toFixed(2)}`;
+            cartItemsContainer.appendChild(totalDiv);
+            
+            // 显示结算按钮
+            document.getElementById('checkout-section').style.display = 'block';
+        }
+        
+        // 更新商品数量
+        async function updateQuantity(index, newQuantity) {
+            if (newQuantity < 1) return;
+            
+            const token = getToken();
+            
+            // 如果用户已登录，更新服务器购物车
+            if (token) {
+                try {
+                    const response = await cartApi.getCart();
+                    if (response.success) {
+                        const item = response.data.items[index];
+                        await cartApi.updateCartItem(item._id, newQuantity);
+                        loadCartItems(); // 重新加载购物车
+                        return;
+                    }
+                } catch (error) {
+                    console.error('更新购物车失败:', error);
+                }
+            }
+            
+            // 如果未登录或更新失败，更新localStorage
+            const cartItems = JSON.parse(localStorage.getItem('shoppingCart') || '[]');
+            if (index >= 0 && index < cartItems.length) {
+                cartItems[index].quantity = newQuantity;
+                localStorage.setItem('shoppingCart', JSON.stringify(cartItems));
+                displayCartItems(cartItems);
+            }
+        }
+        
+        // 删除商品
+        async function removeItem(index) {
+            const token = getToken();
+            
+            // 如果用户已登录，从服务器删除
+            if (token) {
+                try {
+                    const response = await cartApi.getCart();
+                    if (response.success) {
+                        const item = response.data.items[index];
+                        await cartApi.removeFromCart(item._id);
+                        loadCartItems(); // 重新加载购物车
+                        return;
+                    }
+                } catch (error) {
+                    console.error('删除商品失败:', error);
+                }
+            }
+            
+            // 如果未登录或删除失败，从localStorage删除
+            const cartItems = JSON.parse(localStorage.getItem('shoppingCart') || '[]');
+            if (index >= 0 && index < cartItems.length) {
+                cartItems.splice(index, 1);
+                localStorage.setItem('shoppingCart', JSON.stringify(cartItems));
+                displayCartItems(cartItems);
+            }
+        }
+        
+        // 清空购物车
+        async function clearCart() {
+            if (!confirm('确定要清空购物车吗？')) return;
+            
+            const token = getToken();
+            
+            // 如果用户已登录，清空服务器购物车
+            if (token) {
+                try {
+                    await cartApi.clearCart();
+                    loadCartItems(); // 重新加载购物车
+                    return;
+                } catch (error) {
+                    console.error('清空购物车失败:', error);
+                }
+            }
+            
+            // 如果未登录或清空失败，清空localStorage
+            localStorage.setItem('shoppingCart', JSON.stringify([]));
+            displayCartItems([]);
+        }
+        
+        // 结算
+        function checkout() {
+            const token = getToken();
+            if (!token) {
+                alert('请先登录');
+                window.location.href = 'personal-center.html';
+                return;
+            }
+            
+            alert('结算功能即将上线');
+        }
+        
+        // 页面加载后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupLanguageSwitcher();
+            setupModalClose();
+            initCart(); // 初始化购物车数据
+            loadCartItems(); // 加载购物车商品
+            
+            // 全局函数
+            window.updateQuantity = updateQuantity;
+            window.removeItem = removeItem;
+            window.clearCart = clearCart;
+            window.checkout = checkout;
+            window.showModal = showModal;
+            window.closeModal = closeModal;
+            window.sendContact = sendContact;
+        });
+    </script>
+</body>
+</html>

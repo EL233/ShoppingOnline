@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索商品</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="navbar">
+        <div id="language-switcher">
+            <select id="lang-select">
+                <option value="zh" selected>中文</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <nav id="nav-links">
+            <a href="index.html">返回首页</a>
+            <a href="personal-center.html" data-translate="personal-center">个人中心</a>
+            <a href="shopping-cart.html" data-translate="shopping-cart">购物车</a>
+            <a href="#" onclick="showModal('contact-us')" data-translate="contact-us">联系我们</a>
+        </nav>
+        <div id="homeIcon">
+            <a href="index.html">
+                <img src="images/123.JPG" alt="logo"/>
+            </a>
+        </div>
+    </header>
+
+    <main class="page active" style="margin-top: 120px;">
+        <h2>搜索商品</h2>
+        <input type="text" placeholder="查找商品" id="search-input">
+        <div id="search-results"></div>
+    </main>
+
+    <!-- 联系我们弹出框 -->
+    <div id="contact-us" class="modal">
+        <div class="modal-content">
+            <h3>谢谢您的联络，请留下要咨询的问题</h3>
+            <input type="text" placeholder="输入你的电子邮箱" id="contact-email">
+            <textarea placeholder="输入你想告诉我们的..."></textarea>
+            <button onclick="sendContact()">发送</button>
+            <button onclick="closeModal('contact-us')" style="background: #6c757d;">关闭</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { 
+            setupLanguageSwitcher,
+            getUrlParam,
+            products,
+            showModal,
+            closeModal,
+            sendContact,
+            setupModalClose,
+            initCart
+        } from './core.js';
+    
+        // 页面加载后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupLanguageSwitcher();
+            setupModalClose();
+            initCart(); // 初始化购物车数据
+            
+            // 搜索功能
+            function searchProducts() {
+                const searchTerm = document.getElementById('search-input').value.toLowerCase();
+                const resultsContainer = document.getElementById('search-results');
+                
+                if (searchTerm.length === 0) {
+                    resultsContainer.innerHTML = '';
+                    return;
+                }
+    
+                const filteredProducts = products.filter(product => 
+                    product.title.toLowerCase().includes(searchTerm)
+                );
+    
+                resultsContainer.innerHTML = '';
+                
+                if (filteredProducts.length === 0) {
+                    resultsContainer.innerHTML = '<p style="text-align: center; color: #666; margin-top: 20px;">未找到相关商品</p>';
+                    return;
+                }
+    
+                filteredProducts.forEach(product => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.innerHTML = `
+                        <img src="${product.image}" alt="${product.title}">
+                        <div>
+                            <h4>${product.title}</h4>
+                            <p>¥${product.price}</p>
+                            <p style="color: #666; font-size: 14px;">${product.description}</p>
+                        </div>
+                    `;
+                    item.addEventListener('click', () => {
+                        window.location.href = `product-detail.html?id=${product.id}`;
+                    });
+                    resultsContainer.appendChild(item);
+                });
+            }
+            
+            // 如果URL中包含搜索参数，直接执行搜索
+            const searchTerm = getUrlParam('q');
+            if (searchTerm) {
+                document.getElementById('search-input').value = searchTerm;
+                searchProducts();
+            }
+            
+            // 添加搜索事件
+            document.getElementById('search-input').addEventListener('input', searchProducts);
+            
+            // 全局函数
+            window.showModal = showModal;
+            window.closeModal = closeModal;
+            window.sendContact = sendContact;
+        });
+    </script>
+</body>
+</html>

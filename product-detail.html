@@ -1,0 +1,176 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品详情</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="navbar">
+        <div id="language-switcher">
+            <select id="lang-select">
+                <option value="zh" selected>中文</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <nav id="nav-links">
+            <a href="index.html">返回首页</a>
+            <a href="personal-center.html" data-translate="personal-center">个人中心</a>
+            <a href="shopping-cart.html" data-translate="shopping-cart">购物车</a>
+            <a href="#" onclick="showModal('contact-us')" data-translate="contact-us">联系我们</a>
+            <a href="search.html" data-translate="search">搜索</a>
+        </nav>
+        <div id="homeIcon">
+            <a href="index.html">
+                <img src="images/123.JPG" alt="logo"/>
+            </a>
+        </div>
+    </header>
+
+    <main class="page active" style="margin-top: 120px;">
+        <div id="product-detail" class="product-detail-container">
+            <div class="product-image">
+                <img id="product-detail-image" src="" alt="商品图片">
+            </div>
+            <div class="product-info">
+                <h2 id="product-detail-name"></h2>
+                <p id="product-detail-price" class="price"></p>
+                <p id="product-detail-description" class="description"></p>
+                <div class="quantity-selector">
+                    <label for="product-quantity">数量：</label>
+                    <input id="product-quantity" type="number" value="1" min="1" style="width: 80px;">
+                </div>
+                <div class="product-actions">
+                    <button id="add-to-cart-btn" class="add-to-cart">加入购物车</button>
+                    <button id="buy-now-btn" class="buy-now">立即购买</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 联系我们弹出框 -->
+    <div id="contact-us" class="modal">
+        <div class="modal-content">
+            <h3>谢谢您的联络，请留下要咨询的问题</h3>
+            <input type="text" placeholder="输入你的电子邮箱" id="contact-email">
+            <textarea placeholder="输入你想告诉我们的..."></textarea>
+            <button onclick="sendContact()">发送</button>
+            <button onclick="closeModal('contact-us')" style="background: #6c757d;">关闭</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { 
+            setupLanguageSwitcher,
+            getUrlParam,
+            showModal,
+            closeModal,
+            sendContact,
+            setupModalClose,
+            initCart
+        } from './core.js';
+        
+        import products from './products.js';
+        import { cartApi, getToken } from './api.js';
+    
+        // 添加商品到购物车
+        async function addToCart(productId, quantity) {
+            const product = products.find(p => p.id === parseInt(productId));
+            if (!product) {
+                alert('商品不存在');
+                return;
+            }
+            
+            const token = getToken();
+            
+            // 如果用户已登录，添加到服务器购物车
+            if (token) {
+                try {
+                    await cartApi.addToCart(
+                        product.id,
+                        product.title,
+                        product.price,
+                        product.image,
+                        quantity
+                    );
+                    alert('商品已添加到购物车！');
+                    return;
+                } catch (error) {
+                    console.error('添加到购物车失败:', error);
+                }
+            }
+            
+            // 如果未登录或添加失败，添加到localStorage
+            const cartItems = JSON.parse(localStorage.getItem('shoppingCart') || '[]');
+            const existingItem = cartItems.find(item => item.productId === product.id);
+            
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cartItems.push({
+                    productId: product.id,
+                    title: product.title,
+                    price: product.price,
+                    image: product.image,
+                    quantity: quantity
+                });
+            }
+            
+            localStorage.setItem('shoppingCart', JSON.stringify(cartItems));
+            alert('商品已添加到购物车！');
+        }
+        
+        // 立即购买
+        function buyNow(productId, quantity) {
+            addToCart(productId, quantity);
+            window.location.href = 'shopping-cart.html';
+        }
+        
+        // 页面加载后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupLanguageSwitcher();
+            setupModalClose();
+            initCart(); // 初始化购物车数据
+            
+            // 获取URL中的商品ID
+            const productId = parseInt(getUrlParam('id'));
+            if (!productId) {
+                alert('商品ID不存在');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // 查找商品
+            const product = products.find(p => p.id === productId);
+            if (!product) {
+                alert('商品不存在');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // 填充商品详情
+            document.getElementById('product-detail-image').src = product.image;
+            document.getElementById('product-detail-name').textContent = product.title;
+            document.getElementById('product-detail-price').textContent = `¥${product.price}`;
+            document.getElementById('product-detail-description').textContent = product.description;
+            
+            // 更新购物车按钮
+            document.getElementById('add-to-cart-btn').onclick = function() {
+                const quantity = parseInt(document.getElementById('product-quantity').value);
+                addToCart(productId, quantity);
+            };
+            
+            document.getElementById('buy-now-btn').onclick = function() {
+                const quantity = parseInt(document.getElementById('product-quantity').value);
+                buyNow(productId, quantity);
+            };
+            
+            // 全局函数
+            window.showModal = showModal;
+            window.closeModal = closeModal;
+            window.sendContact = sendContact;
+        });
+    </script>
+</body>
+</html>

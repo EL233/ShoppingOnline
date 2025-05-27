@@ -1,0 +1,160 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EL杂货铺</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+</head>
+<body>
+    <header id="navbar">
+        <div id="language-switcher">
+            <select id="lang-select">
+                <option value="zh" selected>中文</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <nav id="nav-links">
+            <a href="personal-center.html" data-translate="personal-center">个人中心</a>
+            <a href="shopping-cart.html" data-translate="shopping-cart">购物车</a>
+            <a href="#" onclick="showModal('contact-us')" data-translate="contact-us">联系我们</a>
+            <a href="search.html" data-translate="search">搜索</a>
+        </nav>
+        <div id="homeIcon">
+            <img src="images/123.JPG" alt="logo"/>
+        </div>
+    </header>
+    
+    <div class="banner">
+        <ul class="slider">
+            <li><img src="images/Asuka.png" alt=""></li>
+            <li><img src="images/GXMD576a0AAU7as.jpeg" alt=""></li>
+            <li><img src="images/GXO06eYb0AAarC3.jpeg" alt=""></li>
+            <li><img src="images/GXPPMj6bgAM_GTU.jpeg" alt=""></li>
+        </ul>
+        <div class="dots">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <a href="javascript:;" class="arrow-l">&lt;</a>
+        <a href="javascript:;" class="arrow-r">&gt;</a>
+    </div>
+    
+    <h2 class="section-title">精选商品</h2>
+    <div id="product-section" class="product-section">
+    </div>
+
+    <!-- 联系我们弹出框 -->
+    <div id="contact-us" class="modal">
+        <div class="modal-content">
+            <h3>谢谢您的联络，请留下要咨询的问题</h3>
+            <input type="text" placeholder="输入你的电子邮箱" id="contact-email">
+            <textarea placeholder="输入你想告诉我们的..."></textarea>
+            <button onclick="sendContact()">发送</button>
+            <button onclick="closeModal('contact-us')" style="background: #6c757d;">关闭</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { 
+            setupLanguageSwitcher,
+            products,
+            showModal,
+            closeModal,
+            sendContact,
+            setupModalClose,
+            initCart
+        } from './core.js';
+    
+        // 轮播图变量
+        let currentSlide = 0;
+        let slideInterval;
+    
+        // 初始化轮播图
+        function initSlider() {
+            const slider = document.querySelector('.slider');
+            const dots = document.querySelectorAll('.dots span');
+            const arrowLeft = document.querySelector('.arrow-l');
+            const arrowRight = document.querySelector('.arrow-r');
+            const banner = document.querySelector('.banner');
+
+            function updateSlider() {
+                slider.style.transform = `translateX(-${currentSlide * 25}%)`;
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('active', index === currentSlide);
+                });
+            }
+
+            function nextSlide() {
+                currentSlide = (currentSlide + 1) % 4;
+                updateSlider();
+            }
+
+            function prevSlide() {
+                currentSlide = (currentSlide - 1 + 4) % 4;
+                updateSlider();
+            }
+
+            arrowRight.addEventListener('click', nextSlide);
+            arrowLeft.addEventListener('click', prevSlide);
+
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    currentSlide = index;
+                    updateSlider();
+                });
+            });
+
+            // 自动轮播
+            slideInterval = setInterval(nextSlide, 3000);
+
+            banner.addEventListener('mouseenter', () => {
+                clearInterval(slideInterval);
+            });
+
+            banner.addEventListener('mouseleave', () => {
+                slideInterval = setInterval(nextSlide, 3000);
+            });
+
+            updateSlider();
+        }
+
+        // 加载商品
+        function loadProducts() {
+            const productSection = document.getElementById('product-section');
+            productSection.innerHTML = '';
+
+            products.forEach(product => {
+                const item = document.createElement('div');
+                item.className = 'product-item';
+                item.innerHTML = `
+                    <img src="${product.image}" alt="${product.title}">
+                    <h3>${product.title}</h3>
+                `;
+                // 修改为跳转到商品详情页，并传递商品ID
+                item.addEventListener('click', () => {
+                    window.location.href = `product-detail.html?id=${product.id}`;
+                });
+                productSection.appendChild(item);
+            });
+        }
+    
+        // 页面加载后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initSlider();
+            loadProducts();
+            setupLanguageSwitcher();
+            setupModalClose();
+            initCart(); // 初始化购物车数据
+            
+            // 全局函数
+            window.showModal = showModal;
+            window.closeModal = closeModal;
+            window.sendContact = sendContact;
+        });
+    </script>
+</body>
+</html>
