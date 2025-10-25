@@ -6,12 +6,20 @@ const { protect } = require('../middleware/auth');
 // 获取用户购物车
 router.get('/', protect, async (req, res) => {
   try {
-    let cart = await Cart.findOne({ user: req.user.id });
+    // 如果是管理员，返回空购物车
+    if (req.user.role === 'admin') {
+      return res.status(200).json({
+        success: true,
+        data: { items: [] }
+      });
+    }
+
+    let cart = await Cart.findOne({ user: req.user._id || req.user.id });
 
     // 如果购物车不存在，创建一个空购物车
     if (!cart) {
       cart = await Cart.create({
-        user: req.user.id,
+        user: req.user._id || req.user.id,
         items: []
       });
     }
@@ -32,20 +40,28 @@ router.get('/', protect, async (req, res) => {
 // 添加商品到购物车
 router.post('/add', protect, async (req, res) => {
   try {
+    // 如果是管理员，不允许添加到购物车
+    if (req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: '管理员不能使用购物车功能'
+      });
+    }
+
     const { productId, title, price, image, quantity } = req.body;
 
-    let cart = await Cart.findOne({ user: req.user.id });
+    let cart = await Cart.findOne({ user: req.user._id || req.user.id });
 
     // 如果购物车不存在，创建一个新购物车
     if (!cart) {
       cart = await Cart.create({
-        user: req.user.id,
+        user: req.user._id || req.user.id,
         items: [{ productId, title, price, image, quantity }]
       });
     } else {
       // 检查商品是否已在购物车中
       const existingItemIndex = cart.items.findIndex(
-        item => item.productId === parseInt(productId)
+        item => item.productId === productId || item.productId === parseInt(productId)
       );
 
       if (existingItemIndex > -1) {
@@ -54,7 +70,7 @@ router.post('/add', protect, async (req, res) => {
       } else {
         // 添加新商品
         cart.items.push({ 
-          productId: parseInt(productId), 
+          productId: productId, 
           title, 
           price: parseFloat(price), 
           image, 
@@ -81,10 +97,18 @@ router.post('/add', protect, async (req, res) => {
 // 更新购物车商品数量
 router.put('/update/:itemId', protect, async (req, res) => {
   try {
+    // 如果是管理员，不允许操作购物车
+    if (req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: '管理员不能使用购物车功能'
+      });
+    }
+
     const { quantity } = req.body;
     const itemId = req.params.itemId;
 
-    const cart = await Cart.findOne({ user: req.user.id });
+    const cart = await Cart.findOne({ user: req.user._id || req.user.id });
 
     if (!cart) {
       return res.status(404).json({
@@ -122,9 +146,17 @@ router.put('/update/:itemId', protect, async (req, res) => {
 // 从购物车删除商品
 router.delete('/remove/:itemId', protect, async (req, res) => {
   try {
+    // 如果是管理员，不允许操作购物车
+    if (req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: '管理员不能使用购物车功能'
+      });
+    }
+
     const itemId = req.params.itemId;
 
-    const cart = await Cart.findOne({ user: req.user.id });
+    const cart = await Cart.findOne({ user: req.user._id || req.user.id });
 
     if (!cart) {
       return res.status(404).json({
@@ -162,7 +194,15 @@ router.delete('/remove/:itemId', protect, async (req, res) => {
 // 清空购物车
 router.delete('/clear', protect, async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user.id });
+    // 如果是管理员，不允许操作购物车
+    if (req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: '管理员不能使用购物车功能'
+      });
+    }
+
+    const cart = await Cart.findOne({ user: req.user._id || req.user.id });
 
     if (!cart) {
       return res.status(404).json({

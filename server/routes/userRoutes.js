@@ -276,6 +276,18 @@ router.post('/reset-password/verify', async (req, res) => {
 // 获取当前用户信息
 router.get('/me', protect, async (req, res) => {
   try {
+    // 如果是管理员，直接返回管理员信息
+    if (req.user.role === 'admin') {
+      return res.status(200).json({
+        success: true,
+        user: {
+          id: 'admin',
+          email: 'admin@example.com',
+          role: 'admin'
+        }
+      });
+    }
+
     const user = await User.findById(req.user.id);
 
     res.status(200).json({

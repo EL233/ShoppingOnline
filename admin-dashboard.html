@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - EL杂货铺</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header id="navbar">
+        <div id="language-switcher">
+            <select id="lang-select">
+                <option value="zh" selected>中文</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <nav id="nav-links">
+            <a href="index.html">返回首页</a>
+            <a href="#" onclick="logoutAdmin()">退出管理</a>
+        </nav>
+        <div id="homeIcon">
+            <a href="index.html">
+                <img src="images/123.JPG" alt="logo"/>
+            </a>
+        </div>
+    </header>
+
+    <div class="admin-container">
+        <!-- 侧边栏 -->
+        <div class="admin-sidebar">
+            <div class="sidebar-header">
+                <h3>管理后台</h3>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" onclick="showSection('dashboard')">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">仪表盘</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('products')">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">商品管理</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('users')">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">用户管理</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('orders')">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">订单管理</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('finance')">
+                    <span class="nav-icon">💰</span>
+                    <span class="nav-text">财务管理</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('inventory')">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">库存管理</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('featured')">
+                    <span class="nav-icon">⭐</span>
+                    <span class="nav-text">精选商品</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('invoice')">
+                    <span class="nav-icon">🧾</span>
+                    <span class="nav-text">发票管理</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('coupon')">
+                    <span class="nav-icon">🎫</span>
+                    <span class="nav-text">优惠券管理</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="admin-main">
+            <!-- 仪表盘 -->
+            <div id="dashboard" class="admin-section active">
+                <div class="section-header">
+                    <h2>仪表盘</h2>
+                    <span id="current-time"></span>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <h3 id="total-users">156</h3>
+                            <p>总用户数</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-content">
+                            <h3 id="total-products">10</h3>
+                            <p>商品总数</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <h3 id="total-revenue">¥12,345</h3>
+                            <p>总收入</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📋</div>
+                        <div class="stat-content">
+                            <h3 id="total-orders">89</h3>
+                            <p>订单总数</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>销售趋势</h3>
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>商品分类统计</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 商品管理 -->
+            <div id="products" class="admin-section">
+                <div class="section-header">
+                    <h2>商品管理</h2>
+                    <button class="btn btn-primary" onclick="showAddProductForm()">添加商品</button>
+                </div>
+
+                <!-- 筛选和搜索 -->
+                <div class="filters">
+                    <input type="text" id="product-search" placeholder="搜索商品..." onkeyup="handleProductSearch(event)">
+                    <select id="category-filter" onchange="handleProductSearch()">
+                        <option value="">所有分类</option>
+                        <option value="anime">动漫</option>
+                        <option value="game">游戏</option>
+                        <option value="other">其他</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="searchProducts()">搜索</button>
+                    <button class="btn btn-secondary" onclick="resetProductSearch()">重置</button>
+                </div>
+
+                <!-- 商品列表 -->
+                <div class="table-container">
+                    <table id="products-table">
+                        <thead>
+                            <tr>
+                                <th>商品名称</th>
+                                <th>价格</th>
+                                <th>库存</th>
+                                <th>分类</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-tbody">
+                            <tr>
+                                <td>可爱路飞</td>
+                                <td>¥2999.9</td>
+                                <td>50</td>
+                                <td>动漫</td>
+                                <td><span class="status active">上架</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="editProduct('1')">编辑</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteProduct('1')">删除</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 用户管理 -->
+            <div id="users" class="admin-section">
+                <div class="section-header">
+                    <h2>用户管理</h2>
+                </div>
+
+                <div class="table-container">
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>邮箱</th>
+                                <th>注册时间</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                            <tr>
+                                <td>test@example.com</td>
+                                <td>2023-10-01</td>
+                                <td><span class="status active">正常</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" onclick="toggleUserStatus('test@example.com')">禁用</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 订单管理 -->
+            <div id="orders" class="admin-section">
+                <div class="section-header">
+                    <h2>订单管理</h2>
+                </div>
+
+                <div class="table-container">
+                    <table id="orders-table">
+                        <thead>
+                            <tr>
+                                <th>订单号</th>
+                                <th>用户</th>
+                                <th>金额</th>
+                                <th>状态</th>
+                                <th>下单时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-tbody">
+                            <tr>
+                                <td>ORD001</td>
+                                <td>test@example.com</td>
+                                <td>¥2999.9</td>
+                                <td><span class="status paid">已支付</span></td>
+                                <td>2023-10-21</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="viewOrder('ORD001')">查看</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 财务管理 -->
+            <div id="finance" class="admin-section">
+                <div class="section-header">
+                    <h2>财务管理</h2>
+                    <div>
+                        <button class="btn btn-success" onclick="exportFinanceReport('csv')">导出CSV</button>
+                        <button class="btn btn-info" onclick="exportFinanceReport('excel')">导出Excel</button>
+                    </div>
+                </div>
+
+                <div class="finance-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <h3 id="today-revenue">¥1,234</h3>
+                            <p>今日收入</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📈</div>
+                        <div class="stat-content">
+                            <h3 id="month-revenue">¥12,345</h3>
+                            <p>本月收入</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💳</div>
+                        <div class="stat-content">
+                            <h3 id="total-revenue-finance">¥123,456</h3>
+                            <p>总收入</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 收入图表区域 -->
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>收入趋势图</h3>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>收入来源分析</h3>
+                        <canvas id="revenueSourceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 库存管理 -->
+            <div id="inventory" class="admin-section">
+                <div class="section-header">
+                    <h2>库存管理</h2>
+                </div>
+
+                <div class="inventory-alerts">
+                    <h4>库存预警</h4>
+                    <p>以下商品库存不足，请及时补货：</p>
+                    <ul id="low-stock-list">
+                        <li>可爱路飞 (库存: 5)</li>
+                    </ul>
+                </div>
+
+                <div class="table-container">
+                    <table id="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>商品名称</th>
+                                <th>当前库存</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody">
+                            <tr>
+                                <td>可爱路飞</td>
+                                <td>50</td>
+                                <td><span class="status normal">正常</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="adjustStock('1')">调整库存</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 精选商品管理 -->
+            <div id="featured" class="admin-section">
+                <div class="section-header">
+                    <h2>精选商品管理</h2>
+                    <p>管理首页轮播图展示的精选商品</p>
+                </div>
+
+                <div class="featured-products-container">
+                    <div class="section-header">
+                    <h3>当前精选商品</h3>
+                        <button class="btn btn-primary" onclick="showAddFeaturedForm()">添加精选商品</button>
+                    </div>
+                    <div id="featured-products-list" class="featured-grid">
+                        <!-- 精选商品将通过JavaScript动态加载 -->
+                    </div>
+                    </div>
+                </div>
+
+            <!-- 发票管理 -->
+            <div id="invoice" class="admin-section">
+                <div class="section-header">
+                    <h2>发票管理</h2>
+                    <div>
+                        <button class="btn btn-primary" onclick="showCreateInvoiceForm()">开具发票</button>
+                        <button class="btn btn-success" onclick="exportInvoiceReport('csv')">导出CSV</button>
+                        <button class="btn btn-info" onclick="exportInvoiceReport('excel')">导出Excel</button>
+                    </div>
+                </div>
+
+                <!-- 搜索和筛选 -->
+                <div class="filters">
+                    <input type="text" id="invoice-search" placeholder="搜索发票（订单号/用户邮箱）..." onkeyup="handleInvoiceSearch(event)">
+                    <select id="invoice-status-filter" onchange="handleInvoiceSearch()">
+                        <option value="">所有状态</option>
+                        <option value="pending">待开具</option>
+                        <option value="issued">已开具</option>
+                        <option value="cancelled">已作废</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="searchInvoices()">搜索</button>
+                    <button class="btn btn-secondary" onclick="resetInvoiceSearch()">重置</button>
+                </div>
+
+                <!-- 发票列表 -->
+                <div class="table-container">
+                    <table id="invoices-table">
+                        <thead>
+                            <tr>
+                                <th>发票编号</th>
+                                <th>订单编号</th>
+                                <th>用户信息</th>
+                                <th>开票金额</th>
+                                <th>开票日期</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoices-tbody">
+                            <tr>
+                                <td>INV001</td>
+                                <td>ORD001</td>
+                                <td>test@example.com</td>
+                                <td>¥2999.9</td>
+                                <td>2023-10-21</td>
+                                <td><span class="status issued">已开具</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="viewInvoice('INV001')">查看</button>
+                                    <button class="btn btn-sm btn-success" onclick="downloadInvoice('INV001')">下载</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 优惠券管理 -->
+            <div id="coupon" class="admin-section">
+                <div class="section-header">
+                    <h2>优惠券管理</h2>
+                    <div>
+                        <button class="btn btn-primary" onclick="showCreateCouponForm()">新增优惠券</button>
+                        <button class="btn btn-success" onclick="exportCouponReport('csv')">导出CSV</button>
+                        <button class="btn btn-info" onclick="exportCouponReport('excel')">导出Excel</button>
+                    </div>
+                </div>
+
+                <!-- 搜索和筛选 -->
+                <div class="filters">
+                    <input type="text" id="coupon-search" placeholder="搜索优惠券（名称/代码）..." onkeyup="handleCouponSearch(event)">
+                    <select id="coupon-type-filter" onchange="handleCouponSearch()">
+                        <option value="">所有类型</option>
+                        <option value="amount">满减</option>
+                        <option value="discount">折扣</option>
+                        <option value="shipping">包邮</option>
+                    </select>
+                    <select id="coupon-status-filter" onchange="handleCouponSearch()">
+                        <option value="">所有状态</option>
+                        <option value="pending">未开始</option>
+                        <option value="active">进行中</option>
+                        <option value="expired">已过期</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="searchCoupons()">搜索</button>
+                    <button class="btn btn-secondary" onclick="resetCouponSearch()">重置</button>
+                </div>
+
+                <!-- 优惠券列表 -->
+                <div class="table-container">
+                    <table id="coupons-table">
+                        <thead>
+                            <tr>
+                                <th>优惠券名称</th>
+                                <th>优惠券代码</th>
+                                <th>类型</th>
+                                <th>面值</th>
+                                <th>使用条件</th>
+                                <th>有效期</th>
+                                <th>使用次数</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coupons-tbody">
+                            <!-- 优惠券数据将通过JavaScript动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加商品表单 -->
+    <div id="add-product-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>添加商品</h3>
+            <form id="add-product-form">
+                <input type="text" id="product-title" placeholder="商品标题" required>
+                <input type="number" id="product-price" placeholder="价格" step="0.01" required>
+                <input type="number" id="product-stock" placeholder="库存数量" required>
+                <textarea id="product-description" placeholder="商品描述" required></textarea>
+                <div class="file-upload-container">
+                    <label for="product-image-file" class="file-upload-label">选择商品图片</label>
+                    <input type="file" id="product-image-file" accept="image/*" onchange="handleImageUpload(this)">
+                    <input type="text" id="product-image" placeholder="图片路径" required style="margin-top: 10px;">
+                </div>
+                <select id="product-category" required>
+                    <option value="">选择分类</option>
+                    <option value="anime">动漫</option>
+                    <option value="game">游戏</option>
+                    <option value="other">其他</option>
+                </select>
+                <div style="display: flex; align-items: center; margin: 10px 0;">
+                    <input type="checkbox" id="product-featured" style="width: auto; margin-right: 10px;">
+                    <label for="product-featured">推荐商品</label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">添加商品</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAddProductForm()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 添加精选商品表单 -->
+    <div id="add-featured-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>添加精选商品</h3>
+            <form id="add-featured-form">
+                <select id="available-products" required>
+                    <option value="">选择商品</option>
+                </select>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">设为精选</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAddFeaturedForm()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 开具发票表单 -->
+    <div id="create-invoice-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>开具发票</h3>
+            <form id="create-invoice-form">
+                <select id="invoice-order-select" required>
+                    <option value="">选择订单</option>
+                </select>
+                <input type="text" id="invoice-title" placeholder="发票抬头" required>
+                <input type="text" id="invoice-tax-number" placeholder="税号" required>
+                <input type="text" id="invoice-company" placeholder="公司名称" required>
+                <input type="text" id="invoice-address" placeholder="公司地址" required>
+                <select id="invoice-type" required>
+                    <option value="">开票方式</option>
+                    <option value="electronic">电子发票</option>
+                    <option value="paper">纸质发票</option>
+                </select>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">确认开票</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateInvoiceForm()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 发票详情模态框 -->
+    <div id="invoice-detail-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>发票详情</h3>
+            <div id="invoice-detail-content">
+                <!-- 发票详情内容将通过JavaScript动态加载 -->
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-success" onclick="downloadInvoicePDF()">下载PDF</button>
+                <button class="btn btn-secondary" onclick="closeInvoiceDetail()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增优惠券表单 -->
+    <div id="create-coupon-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>新增优惠券</h3>
+            <form id="create-coupon-form">
+                <input type="text" id="coupon-name" placeholder="优惠券名称" required>
+                <select id="coupon-type" required>
+                    <option value="">选择类型</option>
+                    <option value="amount">满减</option>
+                    <option value="discount">折扣</option>
+                    <option value="shipping">包邮</option>
+                </select>
+                <input type="number" id="coupon-value" placeholder="面值" step="0.01" required>
+                <input type="number" id="coupon-min-amount" placeholder="最低消费金额" step="0.01" value="0">
+                <input type="datetime-local" id="coupon-start-date" required>
+                <input type="datetime-local" id="coupon-end-date" required>
+                <input type="number" id="coupon-total-quantity" placeholder="总发放数量" min="1" required>
+                <div style="display: flex; align-items: center; margin: 10px 0;">
+                    <input type="checkbox" id="coupon-stackable" style="width: auto; margin-right: 10px;">
+                    <label for="coupon-stackable">可叠加使用</label>
+                </div>
+                <textarea id="coupon-description" placeholder="优惠券描述"></textarea>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">创建优惠券</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateCouponForm()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentSection = 'dashboard';
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('管理后台页面初始化...');
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            // 确保所有部分都隐藏，然后显示仪表盘
+            document.querySelectorAll('.admin-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // 显示仪表盘
+            const dashboardSection = document.getElementById('dashboard');
+            if (dashboardSection) {
+                dashboardSection.classList.add('active');
+            }
+            
+            // 激活仪表盘导航项
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const dashboardNav = document.querySelector('[onclick="showSection(\'dashboard\')"]');
+            if (dashboardNav) {
+                dashboardNav.classList.add('active');
+            }
+            
+            // 初始化图表
+            initCharts();
+        });
+
+        // 更新时间
+        function updateTime() {
+            const now = new Date();
+            const timeElement = document.getElementById('current-time');
+            if (timeElement) {
+                timeElement.textContent = now.toLocaleString('zh-CN');
+            }
+        }
+
+        // 显示指定部分
+        function showSection(sectionId) {
+            console.log('切换到部分:', sectionId);
+            
+            try {
+                // 隐藏所有部分
+                document.querySelectorAll('.admin-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                
+                // 移除所有导航项的活动状态
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // 显示指定部分
+                const targetSection = document.getElementById(sectionId);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                    console.log('显示部分:', sectionId);
+                } else {
+                    console.error('找不到部分:', sectionId);
+                    alert('找不到对应的功能页面');
+                    return;
+                }
+                
+                // 激活对应的导航项
+                const navItem = document.querySelector(`[onclick="showSection('${sectionId}')"]`);
+                if (navItem) {
+                    navItem.classList.add('active');
+                    console.log('导航项已激活:', sectionId);
+                }
+                
+                currentSection = sectionId;
+                
+                // 根据部分加载相应数据
+                switch(sectionId) {
+                    case 'dashboard':
+                        console.log('加载仪表盘数据...');
+                        break;
+                    case 'products':
+                        console.log('加载商品数据...');
+                        loadProducts();
+                        break;
+                    case 'users':
+                        console.log('加载用户数据...');
+                        break;
+                    case 'orders':
+                        console.log('加载订单数据...');
+                        break;
+                    case 'finance':
+                        console.log('加载财务数据...');
+                        initFinanceCharts();
+                        break;
+                    case 'inventory':
+                        console.log('加载库存数据...');
+                        loadInventoryData();
+                        break;
+                    case 'featured':
+                        console.log('加载精选商品数据...');
+                        loadFeaturedProducts();
+                        break;
+                    case 'invoice':
+                        console.log('加载发票数据...');
+                        loadInvoices();
+                        break;
+                    case 'coupon':
+                        console.log('加载优惠券数据...');
+                        loadCoupons();
+                        break;
+                    default:
+                        console.warn('未知的部分:', sectionId);
+                }
+            } catch (error) {
+                console.error('切换部分时出错:', error);
+                alert('切换页面时出错: ' + error.message);
+            }
+        }
+
+        // 初始化图表
+        function initCharts() {
+            try {
+                console.log('开始初始化图表...');
+                
+                // 检查Chart.js是否加载
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js未加载');
+                    return;
+                }
+                
+            // 销售趋势图
+                const salesCanvas = document.getElementById('salesChart');
+                if (salesCanvas) {
+                    const salesCtx = salesCanvas.getContext('2d');
+            new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                    datasets: [{
+                        label: '销售额',
+                        data: [12000, 19000, 15000, 25000, 22000, 30000],
+                        borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                tension: 0.1,
+                                fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                            maintainAspectRatio: false,
+                            aspectRatio: 1.2,
+                    scales: {
+                        y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return '¥' + value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top'
+                                }
+                            },
+                            layout: {
+                                padding: {
+                                    top: 10,
+                                    bottom: 10,
+                                    left: 10,
+                                    right: 10
+                        }
+                    }
+                }
+            });
+                    console.log('销售趋势图初始化完成');
+                }
+
+            // 分类统计图
+                const categoryCanvas = document.getElementById('categoryChart');
+                if (categoryCanvas) {
+                    const categoryCtx = categoryCanvas.getContext('2d');
+            new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['动漫', '游戏', '其他'],
+                    datasets: [{
+                        data: [6, 2, 2],
+                        backgroundColor: [
+                            'rgb(255, 99, 132)',
+                            'rgb(54, 162, 235)',
+                            'rgb(255, 205, 86)'
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                    }]
+                },
+                options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            aspectRatio: 1.2,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            },
+                            layout: {
+                                padding: {
+                                    top: 10,
+                                    bottom: 10,
+                                    left: 10,
+                                    right: 10
+                                }
+                            }
+                        }
+                    });
+                    console.log('分类统计图初始化完成');
+                }
+                
+                console.log('图表初始化完成');
+            } catch (error) {
+                console.error('图表初始化失败:', error);
+            }
+        }
+
+        // 商品管理功能
+        async function loadProducts() {
+            try {
+                console.log('加载商品数据...');
+                const response = await fetch('http://localhost:5001/api/products');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        displayProducts(data.data);
+                    }
+                }
+            } catch (error) {
+                console.error('加载商品失败:', error);
+            }
+        }
+
+        function displayProducts(products) {
+            const tbody = document.getElementById('products-tbody');
+            tbody.innerHTML = '';
+
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.title}</td>
+                    <td>¥${product.price}</td>
+                    <td>${product.stock}</td>
+                    <td>${getCategoryName(product.category)}</td>
+                    <td><span class="status ${product.isActive ? 'active' : 'inactive'}">${product.isActive ? '上架' : '下架'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editProduct('${product._id}')">编辑</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product._id}')">删除</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getCategoryName(category) {
+            const categoryMap = {
+                'anime': '动漫',
+                'game': '游戏',
+                'other': '其他'
+            };
+            return categoryMap[category] || category;
+        }
+
+        // 商品搜索功能
+        async function searchProducts() {
+            try {
+                const searchTerm = document.getElementById('product-search').value;
+                const category = document.getElementById('category-filter').value;
+                
+                let url = 'http://localhost:5001/api/products?';
+                const params = new URLSearchParams();
+                
+                if (searchTerm) {
+                    params.append('search', searchTerm);
+                }
+                if (category) {
+                    params.append('category', category);
+                }
+                
+                url += params.toString();
+                
+                console.log('搜索商品:', url);
+                const response = await fetch(url);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        displayProducts(data.data);
+                    }
+                }
+            } catch (error) {
+                console.error('搜索商品失败:', error);
+            }
+        }
+
+        // 处理商品搜索输入
+        function handleProductSearch(event) {
+            if (event && event.key === 'Enter') {
+                searchProducts();
+            } else if (!event) {
+                searchProducts();
+            }
+        }
+
+        // 重置商品搜索
+        function resetProductSearch() {
+            document.getElementById('product-search').value = '';
+            document.getElementById('category-filter').value = '';
+            loadProducts();
+        }
+
+        function showAddProductForm() {
+            document.getElementById('add-product-modal').style.display = 'block';
+        }
+
+        function closeAddProductForm() {
+            document.getElementById('add-product-modal').style.display = 'none';
+            const form = document.getElementById('add-product-form');
+            if (form) {
+                form.reset();
+                // 重置表单标题
+                const titleElement = document.getElementById('add-product-modal').querySelector('h3');
+                if (titleElement) {
+                    titleElement.textContent = '添加商品';
+                }
+            }
+        }
+
+        // 处理图片上传
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('product-image').value = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 显示添加精选商品表单
+        async function showAddFeaturedForm() {
+            try {
+                const response = await fetch('http://localhost:5001/api/products');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const select = document.getElementById('available-products');
+                        select.innerHTML = '<option value="">选择商品</option>';
+                        
+                        data.data.forEach(product => {
+                            const option = document.createElement('option');
+                            option.value = product._id;
+                            option.textContent = product.title;
+                            select.appendChild(option);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('加载商品列表失败:', error);
+            }
+            
+            document.getElementById('add-featured-modal').style.display = 'block';
+        }
+
+        function closeAddFeaturedForm() {
+            document.getElementById('add-featured-modal').style.display = 'none';
+        }
+
+        // 处理添加精选商品表单提交
+        document.addEventListener('DOMContentLoaded', function() {
+            const addFeaturedForm = document.getElementById('add-featured-form');
+            if (addFeaturedForm) {
+                addFeaturedForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+                    const productId = document.getElementById('available-products').value;
+                    if (productId) {
+                        try {
+                            const response = await fetch(`http://localhost:5001/api/products/${productId}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                },
+                                body: JSON.stringify({ isFeatured: true })
+                            });
+                            if (response.ok) {
+                                alert('商品已设为精选！');
+                                closeAddFeaturedForm();
+                                loadFeaturedProducts();
+                            } else {
+                                alert('设置失败，请重试');
+                            }
+                        } catch (error) {
+                            console.error('设置精选商品失败:', error);
+                            alert('设置失败，请重试');
+                        }
+                    }
+                });
+            }
+
+            // 处理添加商品表单提交
+            const addProductForm = document.getElementById('add-product-form');
+            if (addProductForm) {
+                addProductForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+            const productData = {
+                title: document.getElementById('product-title').value,
+                price: parseFloat(document.getElementById('product-price').value),
+                stock: parseInt(document.getElementById('product-stock').value),
+                description: document.getElementById('product-description').value,
+                image: document.getElementById('product-image').value,
+                category: document.getElementById('product-category').value,
+                isFeatured: document.getElementById('product-featured').checked
+            };
+
+            try {
+                        console.log('发送商品数据:', productData);
+                        const response = await fetch('http://localhost:5001/api/products', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: JSON.stringify(productData)
+                        });
+
+                        console.log('响应状态:', response.status);
+                        const result = await response.json();
+                        console.log('响应数据:', result);
+
+                        if (response.ok && result.success) {
+                        alert('商品添加成功！');
+                            closeAddProductForm();
+                            loadProducts(); // 重新加载商品列表
+                    } else {
+                            alert('添加失败: ' + (result.message || '请重试'));
+                        }
+                    } catch (error) {
+                        console.error('添加商品失败:', error);
+                        alert('添加失败: ' + error.message);
+                    }
+                });
+            }
+
+            // 处理创建优惠券表单提交
+            const createCouponForm = document.getElementById('create-coupon-form');
+            if (createCouponForm) {
+                createCouponForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const couponData = {
+                        name: document.getElementById('coupon-name').value,
+                        type: document.getElementById('coupon-type').value,
+                        value: parseFloat(document.getElementById('coupon-value').value),
+                        minAmount: parseFloat(document.getElementById('coupon-min-amount').value) || 0,
+                        startDate: document.getElementById('coupon-start-date').value,
+                        endDate: document.getElementById('coupon-end-date').value,
+                        totalQuantity: parseInt(document.getElementById('coupon-total-quantity').value),
+                        stackable: document.getElementById('coupon-stackable').checked,
+                        description: document.getElementById('coupon-description').value
+                    };
+
+                    try {
+                        console.log('发送优惠券数据:', couponData);
+                        const response = await fetch('http://localhost:5001/api/coupons', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: JSON.stringify(couponData)
+                        });
+
+                        console.log('响应状态:', response.status);
+                        const result = await response.json();
+                        console.log('响应数据:', result);
+
+                        if (response.ok && result.success) {
+                            alert('优惠券创建成功！');
+                            closeCreateCouponForm();
+                            loadCoupons(); // 重新加载优惠券列表
+                        } else {
+                            alert('创建失败: ' + (result.message || '请重试'));
+                }
+            } catch (error) {
+                        console.error('创建优惠券失败:', error);
+                        alert('创建失败: ' + error.message);
+                    }
+                });
+            }
+        });
+
+        async function editProduct(productId) {
+            try {
+                const response = await fetch(`http://localhost:5001/api/products/${productId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const product = data.data;
+            
+            // 填充编辑表单
+            document.getElementById('product-title').value = product.title;
+            document.getElementById('product-price').value = product.price;
+            document.getElementById('product-stock').value = product.stock;
+            document.getElementById('product-description').value = product.description;
+            document.getElementById('product-image').value = product.image;
+            document.getElementById('product-category').value = product.category;
+            document.getElementById('product-featured').checked = product.isFeatured;
+            
+            // 显示编辑表单
+            document.getElementById('add-product-modal').style.display = 'block';
+                        document.getElementById('add-product-modal').querySelector('h3').textContent = '编辑商品';
+                        
+                        // 清除之前的表单事件监听器
+                        const form = document.getElementById('add-product-form');
+                        const newForm = form.cloneNode(true);
+                        form.parentNode.replaceChild(newForm, form);
+                        
+                        // 添加保存按钮事件
+                        newForm.onsubmit = async function(e) {
+                            e.preventDefault();
+                            await saveProduct(productId);
+                        };
+                    }
+                    }
+                } catch (error) {
+                console.error('加载商品详情失败:', error);
+                alert('加载商品详情失败');
+            }
+        }
+
+        async function saveProduct(productId) {
+            try {
+                const productData = {
+                    title: document.getElementById('product-title').value,
+                    price: parseFloat(document.getElementById('product-price').value),
+                    stock: parseInt(document.getElementById('product-stock').value),
+                    description: document.getElementById('product-description').value,
+                    image: document.getElementById('product-image').value,
+                    category: document.getElementById('product-category').value,
+                    isFeatured: document.getElementById('product-featured').checked
+                };
+
+                const response = await fetch(`http://localhost:5001/api/products/${productId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(productData)
+                });
+
+                if (response.ok) {
+                    alert('商品更新成功！');
+                    closeAddProductForm();
+                    loadProducts(); // 重新加载商品列表
+                } else {
+                    const result = await response.json();
+                    alert('更新失败: ' + (result.message || '请重试'));
+                }
+            } catch (error) {
+                console.error('更新商品失败:', error);
+                alert('更新失败，请重试');
+            }
+        }
+
+        async function deleteProduct(productId) {
+            if (confirm('确定要删除这个商品吗？')) {
+                try {
+                    const response = await fetch(`http://localhost:5001/api/products/${productId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
+                    if (response.ok) {
+                        alert('商品删除成功！');
+                        loadProducts(); // 重新加载商品列表
+                    } else {
+                        alert('删除失败，请重试');
+                    }
+                } catch (error) {
+                    console.error('删除商品失败:', error);
+                    alert('删除失败，请重试');
+                }
+            }
+        }
+
+        // 用户管理功能
+        function toggleUserStatus(email) {
+            alert('切换用户状态: ' + email);
+        }
+
+        // 订单管理功能
+        function viewOrder(orderId) {
+            alert('查看订单: ' + orderId);
+        }
+
+        // 通用导出功能
+        function exportToCSV(data, filename) {
+            if (!data || data.length === 0) {
+                alert('没有数据可导出');
+                return;
+            }
+            
+            const headers = Object.keys(data[0]);
+            const csvContent = [
+                headers.join(','),
+                ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportToExcel(data, filename) {
+            if (!data || data.length === 0) {
+                alert('没有数据可导出');
+                return;
+            }
+            
+            // 简单的Excel格式（CSV格式，但扩展名为.xlsx）
+            const headers = Object.keys(data[0]);
+            const csvContent = [
+                headers.join('\t'),
+                ...data.map(row => headers.map(header => row[header] || '').join('\t'))
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 财务管理功能
+        function exportFinanceReport(format) {
+            try {
+                // 模拟财务数据
+                const financeData = [
+                    { date: '2023-10-01', revenue: 12000, orders: 15 },
+                    { date: '2023-10-02', revenue: 15000, orders: 18 },
+                    { date: '2023-10-03', revenue: 18000, orders: 22 },
+                    { date: '2023-10-04', revenue: 14000, orders: 16 },
+                    { date: '2023-10-05', revenue: 16000, orders: 20 }
+                ];
+                
+                if (format === 'csv') {
+                    exportToCSV(financeData, '财务报告.csv');
+                } else if (format === 'excel') {
+                    exportToExcel(financeData, '财务报告.xlsx');
+                }
+            } catch (error) {
+                console.error('导出财务报告失败:', error);
+                alert('导出失败，请重试');
+            }
+        }
+
+        // 初始化财务图表
+        function initFinanceCharts() {
+            try {
+            // 收入趋势图
+                const revenueCanvas = document.getElementById('revenueChart');
+                if (revenueCanvas && typeof Chart !== 'undefined') {
+                    const revenueCtx = revenueCanvas.getContext('2d');
+            new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月'],
+                    datasets: [{
+                        label: '月收入',
+                        data: [8000, 12000, 15000, 18000, 22000, 25000, 28000, 30000, 32000, 35000],
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                            maintainAspectRatio: false,
+                            aspectRatio: 1.2,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                                legend: {
+                                    position: 'top'
+                                }
+                            },
+                            layout: {
+                                padding: {
+                                    top: 10,
+                                    bottom: 10,
+                                    left: 10,
+                                    right: 10
+                        }
+                    }
+                }
+            });
+                }
+
+            // 收入来源分析图
+                const sourceCanvas = document.getElementById('revenueSourceChart');
+                if (sourceCanvas && typeof Chart !== 'undefined') {
+                    const sourceCtx = sourceCanvas.getContext('2d');
+            new Chart(sourceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['商品销售', '会员费', '广告收入'],
+                    datasets: [{
+                        data: [85000, 25000, 15000],
+                        backgroundColor: [
+                            'rgb(255, 99, 132)',
+                            'rgb(54, 162, 235)',
+                            'rgb(255, 205, 86)'
+                        ],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                            maintainAspectRatio: false,
+                            aspectRatio: 1.2,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                                }
+                            },
+                            layout: {
+                                padding: {
+                                    top: 10,
+                                    bottom: 10,
+                                    left: 10,
+                                    right: 10
+                        }
+                    }
+                }
+            });
+        }
+            } catch (error) {
+                console.error('财务图表初始化失败:', error);
+            }
+        }
+
+        // 库存管理功能
+        async function loadInventoryData() {
+            try {
+                const response = await fetch('http://localhost:5001/api/products');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        displayInventory(data.data);
+                    }
+                }
+            } catch (error) {
+                console.error('加载库存数据失败:', error);
+            }
+        }
+
+        function displayInventory(products) {
+            const tbody = document.getElementById('inventory-tbody');
+            const lowStockList = document.getElementById('low-stock-list');
+            tbody.innerHTML = '';
+            lowStockList.innerHTML = '';
+
+            let hasLowStock = false;
+
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                const stockStatus = product.stock < 10 ? 'low' : 'normal';
+                const statusText = product.stock < 10 ? '库存不足' : '正常';
+                
+                row.innerHTML = `
+                    <td>${product.title}</td>
+                    <td>${product.stock}</td>
+                    <td><span class="status ${stockStatus}">${statusText}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="adjustStock('${product._id}')">调整库存</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+
+                // 添加到库存预警列表
+                if (product.stock < 10) {
+                    hasLowStock = true;
+                    const alertItem = document.createElement('li');
+                    alertItem.textContent = `${product.title} (库存: ${product.stock})`;
+                    lowStockList.appendChild(alertItem);
+                }
+            });
+
+            // 如果没有库存不足的商品，显示提示
+            if (!hasLowStock) {
+                const noAlertItem = document.createElement('li');
+                noAlertItem.textContent = '暂无库存不足的商品';
+                noAlertItem.style.color = '#28a745';
+                lowStockList.appendChild(noAlertItem);
+            }
+        }
+
+        async function adjustStock(productId) {
+            const newStock = prompt('请输入新的库存数量:');
+            if (newStock && !isNaN(newStock)) {
+                try {
+                    const response = await fetch(`http://localhost:5001/api/products/${productId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({ stock: parseInt(newStock) })
+                    });
+                    if (response.ok) {
+                        alert('库存调整成功！');
+                        loadInventoryData(); // 重新加载库存数据
+                    } else {
+                        alert('库存调整失败，请重试');
+                    }
+                } catch (error) {
+                    console.error('调整库存失败:', error);
+                    alert('库存调整失败，请重试');
+                }
+            }
+        }
+
+        // 精选商品管理功能
+        async function loadFeaturedProducts() {
+            try {
+                const response = await fetch('http://localhost:5001/api/products?featured=true');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        displayFeaturedProducts(data.data);
+                    }
+                }
+            } catch (error) {
+                console.error('加载精选商品失败:', error);
+            }
+        }
+
+        function displayFeaturedProducts(products) {
+            const container = document.getElementById('featured-products-list');
+            container.innerHTML = '';
+
+            products.forEach(product => {
+                const item = document.createElement('div');
+                item.className = 'featured-product-item';
+                item.innerHTML = `
+                    <img src="${product.image}" alt="${product.title}">
+                    <div class="featured-product-info">
+                        <h4>${product.title}</h4>
+                        <p>¥${product.price}</p>
+                        <button class="btn btn-danger btn-sm" onclick="removeFromFeatured('${product._id}')">移除精选</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        async function removeFromFeatured(productId) {
+            if (confirm('确定要移除这个精选商品吗？')) {
+                try {
+                    const response = await fetch(`http://localhost:5001/api/products/${productId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({ isFeatured: false })
+                    });
+                    if (response.ok) {
+                        alert('商品已从精选列表中移除！');
+                        loadFeaturedProducts(); // 重新加载精选商品
+                    } else {
+                        alert('移除失败，请重试');
+                }
+            } catch (error) {
+                    console.error('移除精选商品失败:', error);
+                    alert('移除失败，请重试');
+                }
+            }
+        }
+
+        // 发票管理功能
+        function loadInvoices() {
+            console.log('加载发票数据...');
+            // 模拟发票数据
+            const mockInvoices = [
+                {
+                    _id: '1',
+                    invoiceNumber: 'INV001',
+                    orderNumber: 'ORD001',
+                    userEmail: 'test@example.com',
+                    amount: 2999.9,
+                    date: '2023-10-21',
+                    status: 'issued'
+                },
+                {
+                    _id: '2',
+                    invoiceNumber: 'INV002',
+                    orderNumber: 'ORD002',
+                    userEmail: 'user@example.com',
+                    amount: 1599.9,
+                    date: '2023-10-22',
+                    status: 'pending'
+                }
+            ];
+            displayInvoices(mockInvoices);
+        }
+
+        // 发票搜索功能
+        function searchInvoices() {
+            const searchTerm = document.getElementById('invoice-search').value.toLowerCase();
+            const statusFilter = document.getElementById('invoice-status-filter').value;
+            
+            // 模拟发票数据
+            let mockInvoices = [
+                {
+                    _id: '1',
+                    invoiceNumber: 'INV001',
+                    orderNumber: 'ORD001',
+                    userEmail: 'test@example.com',
+                    amount: 2999.9,
+                    date: '2023-10-21',
+                    status: 'issued'
+                },
+                {
+                    _id: '2',
+                    invoiceNumber: 'INV002',
+                    orderNumber: 'ORD002',
+                    userEmail: 'user@example.com',
+                    amount: 1599.9,
+                    date: '2023-10-22',
+                    status: 'pending'
+                },
+                {
+                    _id: '3',
+                    invoiceNumber: 'INV003',
+                    orderNumber: 'ORD003',
+                    userEmail: 'admin@example.com',
+                    amount: 899.9,
+                    date: '2023-10-23',
+                    status: 'cancelled'
+                }
+            ];
+
+            // 应用搜索过滤
+            let filteredInvoices = mockInvoices;
+            
+            if (searchTerm) {
+                filteredInvoices = filteredInvoices.filter(invoice => 
+                    invoice.invoiceNumber.toLowerCase().includes(searchTerm) ||
+                    invoice.orderNumber.toLowerCase().includes(searchTerm) ||
+                    invoice.userEmail.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (statusFilter) {
+                filteredInvoices = filteredInvoices.filter(invoice => 
+                    invoice.status === statusFilter
+                );
+            }
+            
+            displayInvoices(filteredInvoices);
+        }
+
+        // 处理发票搜索输入
+        function handleInvoiceSearch(event) {
+            if (event && event.key === 'Enter') {
+                searchInvoices();
+            } else if (!event) {
+                searchInvoices();
+            }
+        }
+
+        // 重置发票搜索
+        function resetInvoiceSearch() {
+            document.getElementById('invoice-search').value = '';
+            document.getElementById('invoice-status-filter').value = '';
+            loadInvoices();
+        }
+
+        // 显示发票列表
+        function displayInvoices(invoices) {
+            const tbody = document.getElementById('invoices-tbody');
+            tbody.innerHTML = '';
+
+            if (invoices.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666;">暂无发票数据</td></tr>';
+                return;
+            }
+
+            invoices.forEach(invoice => {
+                const row = document.createElement('tr');
+                const statusText = getInvoiceStatusText(invoice.status);
+                const statusClass = getInvoiceStatusClass(invoice.status);
+                
+                row.innerHTML = `
+                    <td>${invoice.invoiceNumber}</td>
+                    <td>${invoice.orderNumber}</td>
+                    <td>${invoice.userEmail}</td>
+                    <td>¥${invoice.amount}</td>
+                    <td>${invoice.date}</td>
+                    <td><span class="status ${statusClass}">${statusText}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewInvoice('${invoice._id}')">查看</button>
+                        <button class="btn btn-sm btn-success" onclick="downloadInvoice('${invoice._id}')">下载</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getInvoiceStatusText(status) {
+            const statusMap = {
+                'pending': '待开具',
+                'issued': '已开具',
+                'cancelled': '已作废'
+            };
+            return statusMap[status] || status;
+        }
+
+        function getInvoiceStatusClass(status) {
+            const classMap = {
+                'pending': 'pending',
+                'issued': 'success',
+                'cancelled': 'failed'
+            };
+            return classMap[status] || 'pending';
+        }
+
+        function showCreateInvoiceForm() {
+            document.getElementById('create-invoice-modal').style.display = 'block';
+        }
+
+        function closeCreateInvoiceForm() {
+            document.getElementById('create-invoice-modal').style.display = 'none';
+            document.getElementById('create-invoice-form').reset();
+        }
+
+        function viewInvoice(invoiceId) {
+            document.getElementById('invoice-detail-modal').style.display = 'block';
+            // 这里可以添加加载发票详情的逻辑
+        }
+
+        function closeInvoiceDetail() {
+            document.getElementById('invoice-detail-modal').style.display = 'none';
+        }
+
+        function downloadInvoice(invoiceId) {
+            alert('下载发票: ' + invoiceId);
+        }
+
+        function downloadInvoicePDF() {
+            alert('下载PDF发票');
+        }
+
+        function exportInvoiceReport(format) {
+            try {
+                // 获取当前显示的发票数据
+                const invoiceRows = document.querySelectorAll('#invoices-tbody tr');
+                const invoiceData = [];
+                
+                invoiceRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 6) {
+                        invoiceData.push({
+                            invoiceNumber: cells[0].textContent,
+                            orderNumber: cells[1].textContent,
+                            userEmail: cells[2].textContent,
+                            amount: cells[3].textContent,
+                            date: cells[4].textContent,
+                            status: cells[5].textContent.trim()
+                        });
+                    }
+                });
+                
+                if (invoiceData.length === 0) {
+                    alert('没有数据可导出');
+                    return;
+                }
+                
+                if (format === 'csv') {
+                    exportToCSV(invoiceData, '发票报告.csv');
+                } else if (format === 'excel') {
+                    exportToExcel(invoiceData, '发票报告.xlsx');
+                }
+            } catch (error) {
+                console.error('导出发票报告失败:', error);
+                alert('导出失败，请重试');
+            }
+        }
+
+        // 优惠券管理功能
+        async function loadCoupons() {
+            try {
+                console.log('加载优惠券数据...');
+                const response = await fetch('http://localhost:5001/api/coupons', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        displayCoupons(data.data);
+                    } else {
+                        console.error('加载优惠券失败:', data.message);
+                        displayCoupons([]);
+                    }
+                } else {
+                    console.error('加载优惠券失败，状态码:', response.status);
+                    displayCoupons([]);
+                }
+            } catch (error) {
+                console.error('加载优惠券失败:', error);
+                displayCoupons([]);
+            }
+        }
+
+        // 优惠券搜索功能
+        async function searchCoupons() {
+            try {
+                const searchTerm = document.getElementById('coupon-search').value;
+                const typeFilter = document.getElementById('coupon-type-filter').value;
+                const statusFilter = document.getElementById('coupon-status-filter').value;
+                
+                let url = 'http://localhost:5001/api/coupons?';
+                const params = new URLSearchParams();
+                
+                if (searchTerm) {
+                    params.append('search', searchTerm);
+                }
+                if (typeFilter) {
+                    params.append('type', typeFilter);
+                }
+                if (statusFilter) {
+                    params.append('status', statusFilter);
+                }
+                
+                url += params.toString();
+                
+                console.log('搜索优惠券:', url);
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        displayCoupons(data.data);
+                    } else {
+                        console.error('搜索优惠券失败:', data.message);
+                        displayCoupons([]);
+                    }
+                } else {
+                    console.error('搜索优惠券失败，状态码:', response.status);
+                    displayCoupons([]);
+                }
+            } catch (error) {
+                console.error('搜索优惠券失败:', error);
+                displayCoupons([]);
+            }
+        }
+
+        // 处理优惠券搜索输入
+        function handleCouponSearch(event) {
+            if (event && event.key === 'Enter') {
+                searchCoupons();
+            } else if (!event) {
+                searchCoupons();
+            }
+        }
+
+        // 重置优惠券搜索
+        function resetCouponSearch() {
+            document.getElementById('coupon-search').value = '';
+            document.getElementById('coupon-type-filter').value = '';
+            document.getElementById('coupon-status-filter').value = '';
+            loadCoupons();
+        }
+
+        function displayCoupons(coupons) {
+            const tbody = document.getElementById('coupons-tbody');
+            tbody.innerHTML = '';
+
+            if (coupons.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #666;">暂无优惠券数据</td></tr>';
+                return;
+            }
+
+            coupons.forEach(coupon => {
+                const row = document.createElement('tr');
+                const status = getCouponStatus(coupon);
+                const typeText = getCouponTypeText(coupon.type);
+                
+                row.innerHTML = `
+                    <td>${coupon.name}</td>
+                    <td>${coupon.code}</td>
+                    <td>${typeText}</td>
+                    <td>${formatCouponValue(coupon.type, coupon.value)}</td>
+                    <td>${coupon.minAmount > 0 ? '满¥' + coupon.minAmount : '无限制'}</td>
+                    <td>${formatDate(coupon.startDate)} - ${formatDate(coupon.endDate)}</td>
+                    <td>${coupon.usedQuantity}/${coupon.totalQuantity}</td>
+                    <td><span class="status ${status.class}">${status.text}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editCoupon('${coupon._id}')">编辑</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCoupon('${coupon._id}')">删除</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getCouponStatus(coupon) {
+            const now = new Date();
+            const startDate = new Date(coupon.startDate);
+            const endDate = new Date(coupon.endDate);
+            
+            if (now < startDate) {
+                return { class: 'pending', text: '未开始' };
+            } else if (now > endDate) {
+                return { class: 'expired', text: '已过期' };
+            } else {
+                return { class: 'active', text: '进行中' };
+            }
+        }
+
+        function getCouponTypeText(type) {
+            const typeMap = {
+                'amount': '满减',
+                'discount': '折扣',
+                'shipping': '包邮'
+            };
+            return typeMap[type] || type;
+        }
+
+        function formatCouponValue(type, value) {
+            if (type === 'discount') {
+                return value + '%';
+            } else if (type === 'amount') {
+                return '¥' + value;
+                } else {
+                return '免费';
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        async function editCoupon(couponId) {
+            try {
+                // 获取优惠券详情
+                const response = await fetch(`http://localhost:5001/api/coupons/${couponId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const coupon = data.data;
+                        
+                        // 填充编辑表单
+                        document.getElementById('coupon-name').value = coupon.name;
+                        document.getElementById('coupon-type').value = coupon.type;
+                        document.getElementById('coupon-value').value = coupon.value;
+                        document.getElementById('coupon-min-amount').value = coupon.minAmount;
+                        document.getElementById('coupon-start-date').value = new Date(coupon.startDate).toISOString().slice(0, 16);
+                        document.getElementById('coupon-end-date').value = new Date(coupon.endDate).toISOString().slice(0, 16);
+                        document.getElementById('coupon-total-quantity').value = coupon.totalQuantity;
+                        document.getElementById('coupon-stackable').checked = coupon.stackable;
+                        document.getElementById('coupon-description').value = coupon.description || '';
+                        
+                        // 显示编辑表单
+                        document.getElementById('create-coupon-modal').style.display = 'block';
+                        document.getElementById('create-coupon-modal').querySelector('h3').textContent = '编辑优惠券';
+                        
+                        // 设置编辑模式
+                        const form = document.getElementById('create-coupon-form');
+                        form.setAttribute('data-edit-mode', 'true');
+                        form.setAttribute('data-coupon-id', couponId);
+                    } else {
+                        alert('获取优惠券详情失败: ' + data.message);
+                    }
+                } else {
+                    alert('获取优惠券详情失败，请重试');
+                }
+            } catch (error) {
+                console.error('获取优惠券详情失败:', error);
+                alert('获取优惠券详情失败，请重试');
+            }
+        }
+
+        function deleteCoupon(couponId) {
+            if (confirm('确定要删除这个优惠券吗？')) {
+                alert('删除优惠券功能待实现: ' + couponId);
+            }
+        }
+
+        function showCreateCouponForm() {
+            document.getElementById('create-coupon-modal').style.display = 'block';
+        }
+
+        function closeCreateCouponForm() {
+            document.getElementById('create-coupon-modal').style.display = 'none';
+            document.getElementById('create-coupon-form').reset();
+            // 重置编辑模式
+            const form = document.getElementById('create-coupon-form');
+            form.removeAttribute('data-edit-mode');
+            form.removeAttribute('data-coupon-id');
+            // 重置标题
+            document.getElementById('create-coupon-modal').querySelector('h3').textContent = '创建优惠券';
+        }
+
+        async function exportCouponReport(format) {
+            try {
+                const response = await fetch('http://localhost:5001/api/coupons', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data) {
+                        const filename = `优惠券报告_${new Date().toISOString().slice(0, 10)}.${format}`;
+                        if (format === 'csv') {
+                            exportToCSV(data.data, filename);
+                        } else {
+                            exportToExcel(data.data, filename);
+                        }
+                    } else {
+                        alert('获取优惠券数据失败');
+                    }
+                } else {
+                    alert('获取优惠券数据失败');
+                }
+            } catch (error) {
+                console.error('导出优惠券报告失败:', error);
+                alert('导出失败，请重试');
+            }
+        }
+
+        // 优惠券表单提交处理
+        document.getElementById('create-coupon-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const couponData = {
+                name: formData.get('name'),
+                type: formData.get('type'),
+                value: parseFloat(formData.get('value')),
+                minAmount: parseFloat(formData.get('minAmount')),
+                startDate: formData.get('startDate'),
+                endDate: formData.get('endDate'),
+                totalQuantity: parseInt(formData.get('totalQuantity')),
+                stackable: formData.get('stackable') === 'on',
+                description: formData.get('description')
+            };
+            
+            try {
+                const isEditMode = this.getAttribute('data-edit-mode') === 'true';
+                const couponId = this.getAttribute('data-coupon-id');
+                
+                const url = isEditMode ? `http://localhost:5001/api/coupons/${couponId}` : 'http://localhost:5001/api/coupons';
+                const method = isEditMode ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(couponData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    alert(isEditMode ? '优惠券更新成功！' : '优惠券创建成功！');
+                    closeCreateCouponForm();
+                    loadCoupons();
+                } else {
+                    alert((isEditMode ? '更新失败' : '创建失败') + '，请重试');
+                }
+            } catch (error) {
+                console.error('操作失败:', error);
+                alert('操作失败，请重试');
+            }
+        });
+
+        // 管理员退出登录
+        function logoutAdmin() {
+            if (confirm('确定要退出管理后台吗？')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('loginType');
+                window.location.href = 'personal-center.html';
+            }
+        }
+    </script>
+</body>
+</html>

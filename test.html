@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .admin-link {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .admin-link:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>系统功能测试</h1>
+        
+        <div class="test-section">
+            <h2>1. 服务器连接测试</h2>
+            <button class="test-button" onclick="testServerConnection()">测试API连接</button>
+            <div id="server-result" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 用户登录测试</h2>
+            <button class="test-button" onclick="testUserLogin()">测试用户登录</button>
+            <div id="user-login-result" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 管理员登录测试</h2>
+            <button class="test-button" onclick="testAdminLogin()">测试管理员登录</button>
+            <div id="admin-login-result" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. 管理后台访问</h2>
+            <a href="admin-dashboard.html" class="admin-link">进入管理后台</a>
+            <p>点击上方链接进入管理后台，测试以下功能：</p>
+            <ul>
+                <li>仪表盘数据加载</li>
+                <li>商品管理功能</li>
+                <li>用户管理功能</li>
+                <li>订单管理功能</li>
+                <li>财务管理功能</li>
+                <li>库存管理功能</li>
+                <li>精选商品管理</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>5. 个人中心</h2>
+            <a href="personal-center.html" class="admin-link">进入个人中心</a>
+            <p>测试用户登录和管理员登录功能</p>
+        </div>
+
+        <div class="test-section">
+            <h2>6. 测试账号</h2>
+            <div class="info">
+                <h3>管理员账号</h3>
+                <p><strong>邮箱:</strong> admin@example.com</p>
+                <p><strong>密码:</strong> admin123</p>
+            </div>
+            <div class="info">
+                <h3>用户账号</h3>
+                <p><strong>邮箱:</strong> test@example.com</p>
+                <p><strong>密码:</strong> 123456</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 测试服务器连接
+        async function testServerConnection() {
+            const resultDiv = document.getElementById('server-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'test-result info';
+            resultDiv.innerHTML = '正在测试服务器连接...';
+
+            try {
+                const response = await fetch('http://localhost:5001/api/products');
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'test-result success';
+                    resultDiv.innerHTML = `✅ 服务器连接成功！<br>商品数量: ${data.data ? data.data.length : 0}`;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `❌ 服务器连接失败: ${error.message}`;
+            }
+        }
+
+        // 测试用户登录
+        async function testUserLogin() {
+            const resultDiv = document.getElementById('user-login-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'test-result info';
+            resultDiv.innerHTML = '正在测试用户登录...';
+
+            try {
+                const response = await fetch('http://localhost:5001/api/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: '123456'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'test-result success';
+                    resultDiv.innerHTML = `✅ 用户登录测试成功！<br>Token: ${data.token ? data.token.substring(0, 20) + '...' : '无'}`;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `❌ 用户登录测试失败: ${error.message}`;
+            }
+        }
+
+        // 测试管理员登录
+        function testAdminLogin() {
+            const resultDiv = document.getElementById('admin-login-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'test-result info';
+            resultDiv.innerHTML = '正在测试管理员登录...';
+
+            try {
+                // 设置管理员token
+                localStorage.setItem('token', 'admin_token_test');
+                localStorage.setItem('loginType', 'admin');
+                
+                resultDiv.className = 'test-result success';
+                resultDiv.innerHTML = `✅ 管理员登录测试成功！<br>Token已设置，可以访问管理后台`;
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `❌ 管理员登录测试失败: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

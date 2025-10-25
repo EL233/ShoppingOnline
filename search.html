@@ -48,13 +48,15 @@
         import { 
             setupLanguageSwitcher,
             getUrlParam,
-            products,
             showModal,
             closeModal,
             sendContact,
             setupModalClose,
             initCart
         } from './core.js';
+        
+        import { productApi } from './api.js';
+        import { getProducts } from './products.js';
     
         // 页面加载后初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -63,7 +65,7 @@
             initCart(); // 初始化购物车数据
             
             // 搜索功能
-            function searchProducts() {
+            async function searchProducts() {
                 const searchTerm = document.getElementById('search-input').value.toLowerCase();
                 const resultsContainer = document.getElementById('search-results');
                 
@@ -72,33 +74,48 @@
                     return;
                 }
     
-                const filteredProducts = products.filter(product => 
-                    product.title.toLowerCase().includes(searchTerm)
-                );
+                try {
+                    // 首先尝试使用API搜索
+                    const response = await productApi.getProducts({ search: searchTerm });
+                    let filteredProducts = [];
+                    
+                    if (response.success) {
+                        filteredProducts = response.data;
+                    } else {
+                        // 如果API失败，使用本地搜索
+                        const products = await getProducts();
+                        filteredProducts = products.filter(product => 
+                            product.title.toLowerCase().includes(searchTerm)
+                        );
+                    }
     
-                resultsContainer.innerHTML = '';
-                
-                if (filteredProducts.length === 0) {
-                    resultsContainer.innerHTML = '<p style="text-align: center; color: #666; margin-top: 20px;">未找到相关商品</p>';
-                    return;
-                }
+                    resultsContainer.innerHTML = '';
+                    
+                    if (filteredProducts.length === 0) {
+                        resultsContainer.innerHTML = '<p style="text-align: center; color: #666; margin-top: 20px;">未找到相关商品</p>';
+                        return;
+                    }
     
-                filteredProducts.forEach(product => {
-                    const item = document.createElement('div');
-                    item.className = 'search-result-item';
-                    item.innerHTML = `
-                        <img src="${product.image}" alt="${product.title}">
-                        <div>
-                            <h4>${product.title}</h4>
-                            <p>¥${product.price}</p>
-                            <p style="color: #666; font-size: 14px;">${product.description}</p>
-                        </div>
-                    `;
-                    item.addEventListener('click', () => {
-                        window.location.href = `product-detail.html?id=${product.id}`;
+                    filteredProducts.forEach(product => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        item.innerHTML = `
+                            <img src="${product.image}" alt="${product.title}">
+                            <div>
+                                <h4>${product.title}</h4>
+                                <p>¥${product.price}</p>
+                                <p style="color: #666; font-size: 14px;">${product.description}</p>
+                            </div>
+                        `;
+                        item.addEventListener('click', () => {
+                            window.location.href = `product-detail.html?id=${product._id || product.id}`;
+                        });
+                        resultsContainer.appendChild(item);
                     });
-                    resultsContainer.appendChild(item);
-                });
+                } catch (error) {
+                    console.error('搜索商品失败:', error);
+                    resultsContainer.innerHTML = '<p style="text-align: center; color: #666; margin-top: 20px;">搜索失败，请稍后再试</p>';
+                }
             }
             
             // 如果URL中包含搜索参数，直接执行搜索

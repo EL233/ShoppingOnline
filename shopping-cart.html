@@ -150,7 +150,7 @@
             if (token) {
                 try {
                     const response = await cartApi.getCart();
-                    if (response.success) {
+                    if (response.success && response.data.items[index]) {
                         const item = response.data.items[index];
                         await cartApi.updateCartItem(item._id, newQuantity);
                         loadCartItems(); // 重新加载购物车

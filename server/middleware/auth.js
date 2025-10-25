@@ -28,7 +28,20 @@ exports.protect = async (req, res, next) => {
       });
     }
 
-    // 验证token
+    // 检查是否是管理员token
+    if (token.startsWith('admin_token_')) {
+      console.log('检测到管理员token，跳过JWT验证');
+      // 为管理员创建虚拟用户对象
+      req.user = {
+        _id: 'admin',
+        id: 'admin',
+        email: 'admin@example.com',
+        role: 'admin'
+      };
+      return next();
+    }
+
+    // 验证JWT token
     const jwtSecret = process.env.JWT_SECRET || 'el_shop_secret_key_2023';
     console.log('使用密钥验证token:', jwtSecret.substring(0, 5) + '...');
     

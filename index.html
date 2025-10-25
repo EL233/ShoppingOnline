@@ -27,17 +27,11 @@
     </header>
     
     <div class="banner">
-        <ul class="slider">
-            <li><img src="images/Asuka.png" alt=""></li>
-            <li><img src="images/GXMD576a0AAU7as.jpeg" alt=""></li>
-            <li><img src="images/GXO06eYb0AAarC3.jpeg" alt=""></li>
-            <li><img src="images/GXPPMj6bgAM_GTU.jpeg" alt=""></li>
+        <ul class="slider" id="carousel-slider">
+            <!-- 轮播图内容将通过JavaScript动态加载 -->
         </ul>
-        <div class="dots">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
+        <div class="dots" id="carousel-dots">
+            <!-- 轮播图指示点将通过JavaScript动态生成 -->
         </div>
         <a href="javascript:;" class="arrow-l">&lt;</a>
         <a href="javascript:;" class="arrow-r">&gt;</a>
@@ -61,7 +55,7 @@
     <script type="module">
         import { 
             setupLanguageSwitcher,
-            products,
+            getProducts,
             showModal,
             closeModal,
             sendContact,
@@ -72,7 +66,77 @@
         // 轮播图变量
         let currentSlide = 0;
         let slideInterval;
+        let totalSlides = 0;
     
+        // 加载精选商品作为轮播图
+        async function loadFeaturedProducts() {
+            try {
+                const response = await fetch('http://localhost:5001/api/products?featured=true');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.length > 0) {
+                        displayFeaturedProducts(data.data);
+                    } else {
+                        // 如果没有精选商品，使用默认商品
+                        displayDefaultProducts();
+                    }
+                } else {
+                    displayDefaultProducts();
+                }
+            } catch (error) {
+                console.error('加载精选商品失败:', error);
+                displayDefaultProducts();
+            }
+        }
+
+        // 显示精选商品
+        function displayFeaturedProducts(products) {
+            const slider = document.getElementById('carousel-slider');
+            const dotsContainer = document.getElementById('carousel-dots');
+            
+            slider.innerHTML = '';
+            dotsContainer.innerHTML = '';
+
+            // 只显示前4个精选商品
+            const featuredProducts = products.slice(0, 4);
+
+            featuredProducts.forEach((product, index) => {
+                // 创建轮播图项
+                const item = document.createElement('li');
+                item.className = 'carousel-item';
+                item.setAttribute('data-product-id', product._id);
+                item.innerHTML = `<img src="${product.image}" alt="${product.title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">`;
+                
+                // 添加点击事件
+                item.style.cursor = 'pointer';
+                item.addEventListener('click', () => {
+                    window.location.href = `product-detail.html?id=${product._id}`;
+                });
+                
+                slider.appendChild(item);
+
+                // 创建指示点
+                const dot = document.createElement('span');
+                if (index === 0) dot.classList.add('active');
+                dotsContainer.appendChild(dot);
+            });
+
+            // 更新轮播图数量
+            totalSlides = featuredProducts.length;
+            initSlider();
+        }
+
+        // 显示默认商品
+        function displayDefaultProducts() {
+            const defaultProducts = [
+                { title: '明日香', image: 'images/Asuka.png', _id: 'default1' },
+                { title: '可爱路飞', image: 'images/GXMD576a0AAU7as.jpeg', _id: 'default2' },
+                { title: '老八抢饮料', image: 'images/GXO06eYb0AAarC3.jpeg', _id: 'default3' },
+                { title: '赛博朋克边缘行者', image: 'images/GXPPMj6bgAM_GTU.jpeg', _id: 'default4' }
+            ];
+            displayFeaturedProducts(defaultProducts);
+        }
+
         // 初始化轮播图
         function initSlider() {
             const slider = document.querySelector('.slider');
@@ -82,19 +146,21 @@
             const banner = document.querySelector('.banner');
 
             function updateSlider() {
-                slider.style.transform = `translateX(-${currentSlide * 25}%)`;
-                dots.forEach((dot, index) => {
-                    dot.classList.toggle('active', index === currentSlide);
-                });
+                if (totalSlides > 0) {
+                    slider.style.transform = `translateX(-${currentSlide * (100 / totalSlides)}%)`;
+                    dots.forEach((dot, index) => {
+                        dot.classList.toggle('active', index === currentSlide);
+                    });
+                }
             }
 
             function nextSlide() {
-                currentSlide = (currentSlide + 1) % 4;
+                currentSlide = (currentSlide + 1) % totalSlides;
                 updateSlider();
             }
 
             function prevSlide() {
-                currentSlide = (currentSlide - 1 + 4) % 4;
+                currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
                 updateSlider();
             }
 
@@ -123,28 +189,34 @@
         }
 
         // 加载商品
-        function loadProducts() {
+        async function loadProducts() {
             const productSection = document.getElementById('product-section');
             productSection.innerHTML = '';
 
-            products.forEach(product => {
-                const item = document.createElement('div');
-                item.className = 'product-item';
-                item.innerHTML = `
-                    <img src="${product.image}" alt="${product.title}">
-                    <h3>${product.title}</h3>
-                `;
-                // 修改为跳转到商品详情页，并传递商品ID
-                item.addEventListener('click', () => {
-                    window.location.href = `product-detail.html?id=${product.id}`;
+            try {
+                const products = await getProducts();
+                products.forEach(product => {
+                    const item = document.createElement('div');
+                    item.className = 'product-item';
+                    item.innerHTML = `
+                        <img src="${product.image}" alt="${product.title}">
+                        <h3>${product.title}</h3>
+                    `;
+                    // 修改为跳转到商品详情页，并传递商品ID
+                    item.addEventListener('click', () => {
+                        window.location.href = `product-detail.html?id=${product._id || product.id}`;
+                    });
+                    productSection.appendChild(item);
                 });
-                productSection.appendChild(item);
-            });
+            } catch (error) {
+                console.error('加载商品失败:', error);
+                productSection.innerHTML = '<p>商品加载失败，请刷新页面重试</p>';
+            }
         }
     
         // 页面加载后初始化
         document.addEventListener('DOMContentLoaded', function() {
-            initSlider();
+            loadFeaturedProducts(); // 加载精选商品作为轮播图
             loadProducts();
             setupLanguageSwitcher();
             setupModalClose();

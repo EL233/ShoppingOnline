@@ -71,54 +71,75 @@
             initCart
         } from './core.js';
         
-        import products from './products.js';
-        import { cartApi, getToken } from './api.js';
+        import { getProducts, getDefaultProducts } from './products.js';
+        import { cartApi, getToken, productApi } from './api.js';
     
         // 添加商品到购物车
         async function addToCart(productId, quantity) {
-            const product = products.find(p => p.id === parseInt(productId));
-            if (!product) {
-                alert('商品不存在');
-                return;
-            }
-            
-            const token = getToken();
-            
-            // 如果用户已登录，添加到服务器购物车
-            if (token) {
+            try {
+                // 首先尝试从API获取商品信息
+                let product;
                 try {
-                    await cartApi.addToCart(
-                        product.id,
-                        product.title,
-                        product.price,
-                        product.image,
-                        quantity
-                    );
-                    alert('商品已添加到购物车！');
-                    return;
+                    const response = await productApi.getProduct(productId);
+                    if (response.success) {
+                        product = response.data;
+                    }
                 } catch (error) {
-                    console.error('添加到购物车失败:', error);
+                    console.error('从API获取商品失败，尝试从本地获取:', error);
                 }
+                
+                // 如果API失败，从本地商品列表获取
+                if (!product) {
+                    const products = await getProducts();
+                    product = products.find(p => p._id === productId || p.id === parseInt(productId));
+                }
+                
+                if (!product) {
+                    alert('商品不存在');
+                    return;
+                }
+                
+                const token = getToken();
+                
+                // 如果用户已登录，添加到服务器购物车
+                if (token) {
+                    try {
+                        await cartApi.addToCart(
+                            product._id || product.id,
+                            product.title,
+                            product.price,
+                            product.image,
+                            quantity
+                        );
+                        alert('商品已添加到购物车！');
+                        return;
+                    } catch (error) {
+                        console.error('添加到购物车失败:', error);
+                    }
+                }
+                
+                // 如果未登录或添加失败，添加到localStorage
+                const cartItems = JSON.parse(localStorage.getItem('shoppingCart') || '[]');
+                const existingItem = cartItems.find(item => (item.productId || item._id) === (product._id || product.id));
+                
+                if (existingItem) {
+                    existingItem.quantity += quantity;
+                } else {
+                    cartItems.push({
+                        productId: product._id || product.id,
+                        title: product.title,
+                        price: product.price,
+                        image: product.image,
+                        quantity: quantity
+                    });
+                }
+                
+                localStorage.setItem('shoppingCart', JSON.stringify(cartItems));
+                alert('商品已添加到购物车！');
+            } catch (error) {
+                console.error('添加商品到购物车失败:', error);
+                alert('添加商品失败，请稍后再试');
             }
-            
-            // 如果未登录或添加失败，添加到localStorage
-            const cartItems = JSON.parse(localStorage.getItem('shoppingCart') || '[]');
-            const existingItem = cartItems.find(item => item.productId === product.id);
-            
-            if (existingItem) {
-                existingItem.quantity += quantity;
-            } else {
-                cartItems.push({
-                    productId: product.id,
-                    title: product.title,
-                    price: product.price,
-                    image: product.image,
-                    quantity: quantity
-                });
-            }
-            
-            localStorage.setItem('shoppingCart', JSON.stringify(cartItems));
-            alert('商品已添加到购物车！');
         }
         
         // 立即购买
@@ -128,13 +149,13 @@
         }
         
         // 页面加载后初始化
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             setupLanguageSwitcher();
             setupModalClose();
             initCart(); // 初始化购物车数据
             
             // 获取URL中的商品ID
-            const productId = parseInt(getUrlParam('id'));
+            const productId = getUrlParam('id');
             if (!productId) {
                 alert('商品ID不存在');
                 window.location.href = 'index.html';
@@ -142,7 +163,23 @@
             }
             
             // 查找商品
-            const product = products.find(p => p.id === productId);
+            let product;
+            try {
+                // 首先尝试从API获取商品信息
+                const response = await productApi.getProduct(productId);
+                if (response.success) {
+                    product = response.data;
+                }
+            } catch (error) {
+                console.error('从API获取商品失败，尝试从本地获取:', error);
+            }
+            
+            // 如果API失败，从本地商品列表获取
+            if (!product) {
+                const products = await getProducts();
+                product = products.find(p => p._id === productId || p.id === parseInt(productId));
+            }
+            
             if (!product) {
                 alert('商品不存在');
                 window.location.href = 'index.html';

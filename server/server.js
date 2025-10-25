@@ -8,6 +8,8 @@ require('dotenv').config();
 const userRoutes = require('./routes/userRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const addressRoutes = require('./routes/addressRoutes');
+const productRoutes = require('./routes/productRoutes');
+const couponRoutes = require('./routes/couponRoutes');
 
 const app = express();
 
@@ -20,8 +22,8 @@ app.use(cors({
 }));
 
 // 中间件
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 静态文件服务
 app.use(express.static(path.join(__dirname, '../')));
@@ -30,6 +32,8 @@ app.use(express.static(path.join(__dirname, '../')));
 app.use('/api/users', userRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/address', addressRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // 首页路由
 app.get('/', (req, res) => {

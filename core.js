@@ -1,5 +1,5 @@
 ﻿// core.js - 核心功能模块
-import products from './products.js';
+import { getProducts, getDefaultProducts } from './products.js';
 
 // 全局状态
 let cart = [];
@@ -38,29 +38,35 @@ function getUrlParam(name) {
 }
 
 // 添加商品到购物车
-function addToCart(productId, quantity = 1) {
-    const product = products.find(p => p.id === parseInt(productId));
-    if (!product) {
-        alert('商品不存在');
-        return;
+async function addToCart(productId, quantity = 1) {
+    try {
+        const products = await getProducts();
+        const product = products.find(p => p._id === productId || p.id === parseInt(productId));
+        if (!product) {
+            alert('商品不存在');
+            return;
+        }
+        
+        const existingItem = cart.find(item => (item._id || item.id) === (product._id || product.id));
+        
+        if (existingItem) {
+            existingItem.quantity += quantity;
+        } else {
+            cart.push({
+                ...product,
+                quantity: quantity
+            });
+        }
+        
+        // 保存到localStorage
+        localStorage.setItem('shoppingCart', JSON.stringify(cart));
+        
+        alert('商品已添加到购物车！');
+        updateCartDisplay(); // 确保更新购物车显示
+    } catch (error) {
+        console.error('添加商品到购物车失败:', error);
+        alert('添加商品失败，请稍后再试');
     }
-    
-    const existingItem = cart.find(item => item.id === product.id);
-    
-    if (existingItem) {
-        existingItem.quantity += quantity;
-    } else {
-        cart.push({
-            ...product,
-            quantity: quantity
-        });
-    }
-    
-    // 保存到localStorage
-    localStorage.setItem('shoppingCart', JSON.stringify(cart));
-    
-    alert('商品已添加到购物车！');
-    updateCartDisplay(); // 确保更新购物车显示
 }
 
 // 从购物车移除商品
@@ -239,7 +245,8 @@ function setupModalClose() {
 
 // 导出所有功能
 export {
-    products,
+    getProducts,
+    getDefaultProducts,
     cart,
     isLoggedIn,
     currentUser,

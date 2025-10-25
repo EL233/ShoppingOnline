@@ -167,10 +167,45 @@ const addressApi = {
   }
 };
 
+// 商品相关API
+const productApi = {
+  // 获取商品列表
+  getProducts: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return request(`/products${queryString ? '?' + queryString : ''}`);
+  },
+
+  // 获取单个商品
+  getProduct: (id) => {
+    return request(`/products/${id}`);
+  },
+
+  // 创建商品（管理员功能）
+  createProduct: (productData) => {
+    return request('/products', 'POST', productData);
+  },
+
+  // 更新商品（管理员功能）
+  updateProduct: (id, productData) => {
+    return request(`/products/${id}`, 'PUT', productData);
+  },
+
+  // 删除商品（管理员功能）
+  deleteProduct: (id) => {
+    return request(`/products/${id}`, 'DELETE');
+  },
+
+  // 获取商品分类统计
+  getCategoryStats: () => {
+    return request('/products/stats/categories');
+  }
+};
+
 // 导出API服务
 export {
   userApi,
   cartApi,
   addressApi,
+  productApi,
   getToken
 }; 
